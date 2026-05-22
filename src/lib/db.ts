@@ -11,8 +11,11 @@ function createClient() {
     return new PrismaClient({ adapter } as never);
   }
 
-  // Production — PostgreSQL (Neon, etc.)
-  return new PrismaClient();
+  // Production — PostgreSQL (Neon, Supabase, etc.)
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { PrismaPg } = require("@prisma/adapter-pg");
+  const adapter = new PrismaPg({ connectionString: url });
+  return new PrismaClient({ adapter } as never);
 }
 
 declare global {
