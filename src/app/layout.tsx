@@ -1,3 +1,6 @@
+// All pages query the database — render dynamically at request time, never prerender at build
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
