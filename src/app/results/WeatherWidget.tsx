@@ -67,7 +67,7 @@ async function fetchWeather() {
   url.searchParams.set("timezone", "America/New_York");
   url.searchParams.set("forecast_days", "7");
 
-  const res = await fetch(url.toString(), { next: { revalidate: 3600 } });
+  const res = await fetch(url.toString(), { cache: "no-store" });
   if (!res.ok) return null;
   return res.json() as Promise<{
     daily: {
@@ -82,8 +82,20 @@ async function fetchWeather() {
 }
 
 async function WeatherCard() {
-  const data = await fetchWeather();
-  if (!data) return null;
+  let data;
+  try {
+    data = await fetchWeather();
+  } catch {
+    data = null;
+  }
+
+  if (!data) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3">
+        <p className="text-xs text-gray-400">Weather unavailable</p>
+      </div>
+    );
+  }
 
   const thursday = nextThursday();
   const idx = data.daily.time.indexOf(thursday);

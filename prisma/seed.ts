@@ -9,7 +9,10 @@ if (url.startsWith("file:")) {
   const adapter = new PrismaBetterSqlite3({ url });
   db = new PrismaClient({ adapter } as never);
 } else {
-  db = new PrismaClient();
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { PrismaPg } = require("@prisma/adapter-pg");
+  const adapter = new PrismaPg({ connectionString: url });
+  db = new PrismaClient({ adapter } as never);
 }
 
 const PLAYERS = [
