@@ -201,7 +201,8 @@ export default async function HistoryPage() {
             viewBox={`0 0 ${svgW} ${svgH}`}
             width={svgW}
             height={svgH}
-            className="block"
+            className="block min-w-full"
+            style={{ minWidth: svgW }}
             aria-label="Bump chart of season rankings by week"
           >
             {/* Horizontal gridlines */}

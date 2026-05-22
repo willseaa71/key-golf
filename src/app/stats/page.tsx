@@ -15,9 +15,9 @@ function signedFmt(n: number) {
 
 // Bar chart constants
 const BAR_MAX_STROKES = 2; // ±2 strokes = max bar extent
-const BAR_SCALE = 40; // px per stroke
-const BAR_CENTER = 100; // px from left edge to par baseline
-const BAR_TOTAL_W = 240; // total SVG width for the bar
+const BAR_SCALE = 24; // px per stroke
+const BAR_CENTER = 60;  // px from left edge to par baseline
+const BAR_TOTAL_W = 140; // total SVG width for the bar
 
 type HoleStat = {
   holeNumber: number; // real course hole number (1–18)
@@ -100,27 +100,26 @@ function HoleRow({ stat, rankLabel }: { stat: HoleStat; rankLabel: string }) {
       </div>
 
       {/* Score breakdown row */}
-      <div className="flex items-center gap-2 pl-9 text-[11px]">
-        <span className="text-gray-400 shrink-0">{total} rounds</span>
-        <span className="text-gray-300">·</span>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-9 text-[11px]">
+        <span className="text-gray-400 shrink-0">{total} rounds ·</span>
         {stat.birdies > 0 && (
-          <span className="text-[#006747] font-medium">
-            🐦 Birdie {stat.birdies}×&nbsp;<span className="text-gray-400 font-normal">({pct(stat.birdies)}%)</span>
+          <span className="text-[#006747] font-medium whitespace-nowrap">
+            🐦 {stat.birdies} birdie{stat.birdies !== 1 ? "s" : ""} ({pct(stat.birdies)}%)
           </span>
         )}
         {stat.pars > 0 && (
-          <span className="text-gray-500 font-medium">
-            Par {stat.pars}×&nbsp;<span className="text-gray-400 font-normal">({pct(stat.pars)}%)</span>
+          <span className="text-gray-500 font-medium whitespace-nowrap">
+            {stat.pars} par ({pct(stat.pars)}%)
           </span>
         )}
         {stat.bogeys > 0 && (
-          <span className="text-red-500 font-medium">
-            Bogey {stat.bogeys}×&nbsp;<span className="text-red-400 font-normal">({pct(stat.bogeys)}%)</span>
+          <span className="text-red-500 font-medium whitespace-nowrap">
+            {stat.bogeys} bogey{stat.bogeys !== 1 ? "s" : ""} ({pct(stat.bogeys)}%)
           </span>
         )}
         {stat.doublesPlus > 0 && (
-          <span className="text-red-700 font-medium">
-            Dbl+ {stat.doublesPlus}×&nbsp;<span className="text-red-500 font-normal">({pct(stat.doublesPlus)}%)</span>
+          <span className="text-red-700 font-medium whitespace-nowrap">
+            {stat.doublesPlus} dbl+ ({pct(stat.doublesPlus)}%)
           </span>
         )}
       </div>
