@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id             Int                  @id @default(autoincrement())
+  name           String               @unique
+  active         Boolean              @default(true)
+  sub_order      Int?                 // null = regular player; 1–N = sub priority order
+  rounds         Round[]
+  prior_averages PriorSeasonAverage[]
+}
+
+model PriorSeasonAverage {
+  id          Int    @id @default(autoincrement())
+  player_id   Int
+  season_year Int
+  average     Float
+  player      Player @relation(fields: [player_id], references: [id])
+
+  @@unique([player_id, season_year])
+}
+
+model Season {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  start_date DateTime
+  end_date   DateTime
+  rounds     Round[]
+}
+
+model Round {
+  id              Int         @id @default(autoincrement())
+  player_id       Int
+  season_id       Int
+  week_number     Int
+  date            DateTime
+  course_half     String      // "front9" | "back9"
+  total_score     Int
+  has_hole_scores Boolean     @default(false)
+  notes           String?
+  player          Player      @relation(fields: [player_id], references: [id])
+  season          Season      @relation(fields: [season_id], references: [id])
+  hole_scores     HoleScore[]
+
+  @@unique([player_id, week_number, season_id])
+}
+
+model HoleScore {
+  id          Int   @id @default(autoincrement())
+  round_id    Int
+  hole_number Int
+  strokes     Int
+  round       Round @relation(fields: [round_id], references: [id], onDelete: Cascade)
+
+  @@unique([round_id, hole_number])
+}

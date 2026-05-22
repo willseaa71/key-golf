@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# SQLite database — contains live league data, never commit
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+/src/generated/prisma
