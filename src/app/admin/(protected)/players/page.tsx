@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { checkAdminAuth } from "@/lib/admin-auth";
-import { togglePlayerActive, addPlayer, deletePlayer } from "@/app/admin/actions/players";
+import { togglePlayerActive, addPlayer } from "@/app/admin/actions/players";
+import { DeletePlayerButton } from "./DeletePlayerButton";
 
 export const metadata = { title: "Players — KEY Golf Admin" };
 
@@ -18,7 +19,6 @@ export default async function PlayersPage() {
 
   function PlayerRow({ player }: { player: (typeof players)[0] }) {
     const toggleAction = togglePlayerActive.bind(null, player.id, player.active);
-    const deleteAction = deletePlayer.bind(null, player.id);
     const canDelete = player._count.rounds === 0;
 
     return (
@@ -55,17 +55,7 @@ export default async function PlayersPage() {
               </button>
             </form>
             {canDelete && (
-              <form action={deleteAction} className="inline">
-                <button
-                  type="submit"
-                  className="text-xs font-medium px-2.5 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50"
-                  onClick={(e) => {
-                    if (!confirm(`Delete ${player.name}? This cannot be undone.`)) e.preventDefault();
-                  }}
-                >
-                  Delete
-                </button>
-              </form>
+              <DeletePlayerButton id={player.id} name={player.name} />
             )}
           </div>
         </td>
