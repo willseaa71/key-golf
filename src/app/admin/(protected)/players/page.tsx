@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { checkAdminAuth } from "@/lib/admin-auth";
-import { togglePlayerActive } from "@/app/admin/actions/players";
+import { togglePlayerActive, addPlayer, deletePlayer } from "@/app/admin/actions/players";
 
 export const metadata = { title: "Players — KEY Golf Admin" };
 
@@ -17,31 +18,63 @@ export default async function PlayersPage() {
 
   function PlayerRow({ player }: { player: (typeof players)[0] }) {
     const toggleAction = togglePlayerActive.bind(null, player.id, player.active);
+    const deleteAction = deletePlayer.bind(null, player.id);
+    const canDelete = player._count.rounds === 0;
+
     return (
       <tr className={`hover:bg-gray-50 ${!player.active ? "opacity-40" : ""}`}>
-        <td className="px-4 py-2.5 font-medium">{player.name}</td>
+        <td className="px-4 py-2.5 font-medium">
+          {player.name}
+          {player.sub_order !== null && (
+            <span className="ml-1.5 text-[10px] font-medium text-[#C9A84C] bg-[#C9A84C]/10 px-1 rounded">
+              SUB {player.sub_order}
+            </span>
+          )}
+        </td>
         <td className="px-4 py-2.5 text-gray-400 text-sm text-center">
           {player._count.rounds}
         </td>
         <td className="px-4 py-2.5 text-right">
-          <form action={toggleAction}>
-            <button
-              type="submit"
-              className={`text-xs font-medium px-2.5 py-1 rounded-lg border ${
-                player.active
-                  ? "border-gray-300 text-gray-600 hover:border-red-300 hover:text-red-500"
-                  : "border-[#006747] text-[#006747]"
-              }`}
+          <div className="flex items-center justify-end gap-2">
+            <Link
+              href={`/admin/players/${player.id}`}
+              className="text-xs font-medium px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:border-[#006747] hover:text-[#006747]"
             >
-              {player.active ? "Deactivate" : "Activate"}
-            </button>
-          </form>
+              Edit
+            </Link>
+            <form action={toggleAction} className="inline">
+              <button
+                type="submit"
+                className={`text-xs font-medium px-2.5 py-1 rounded-lg border ${
+                  player.active
+                    ? "border-gray-300 text-gray-600 hover:border-orange-300 hover:text-orange-500"
+                    : "border-[#006747] text-[#006747]"
+                }`}
+              >
+                {player.active ? "Deactivate" : "Activate"}
+              </button>
+            </form>
+            {canDelete && (
+              <form action={deleteAction} className="inline">
+                <button
+                  type="submit"
+                  className="text-xs font-medium px-2.5 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50"
+                  onClick={(e) => {
+                    if (!confirm(`Delete ${player.name}? This cannot be undone.`)) e.preventDefault();
+                  }}
+                >
+                  Delete
+                </button>
+              </form>
+            )}
+          </div>
         </td>
       </tr>
     );
   }
 
   function PlayerTable({ title, rows }: { title: string; rows: (typeof players) }) {
+    if (rows.length === 0) return null;
     return (
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 mb-2">{title}</h2>
@@ -66,6 +99,44 @@ export default async function PlayersPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Players</h1>
+
+      {/* Add Player */}
+      <section>
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-400 mb-2">Add Player</h2>
+        <form action={addPlayer} className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              name="name"
+              required
+              placeholder="Full name"
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#006747]/30"
+            />
+            <select
+              name="type"
+              defaultValue="regular"
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#006747]/30"
+            >
+              <option value="regular">Regular player</option>
+              <option value="sub">Sub</option>
+            </select>
+            <input
+              name="sub_order"
+              type="number"
+              min="1"
+              placeholder="Sub #"
+              className="w-24 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#006747]/30"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-[#006747] text-white text-sm font-medium rounded-lg hover:bg-[#005236]"
+            >
+              Add
+            </button>
+          </div>
+          <p className="text-xs text-gray-400">Sub # only required when type is Sub. Smaller number = higher priority.</p>
+        </form>
+      </section>
+
       <PlayerTable title="League Players" rows={regulars} />
       <PlayerTable title="Subs" rows={subs} />
     </div>
