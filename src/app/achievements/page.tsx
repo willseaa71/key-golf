@@ -590,48 +590,63 @@ export default async function AchievementsPage() {
         </p>
       </div>
 
-      {/* ── Section 2: Season Leaders ── */}
-      <section className="space-y-4">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-          Season Leaders
-        </h2>
-
-        {/* Season Low Hero */}
-        <div className="rounded-2xl border-2 border-[#C9A84C]/50 bg-gradient-to-br from-[#C9A84C]/10 to-[#C9A84C]/5 p-5">
-          <div className="flex items-start gap-4">
-            <div className="text-3xl w-14 h-14 flex items-center justify-center rounded-xl bg-[#C9A84C]/20">
-              🏆
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-[#C9A84C] uppercase tracking-widest mb-0.5">Season Low</p>
-              <p className="text-4xl font-bold text-gray-900">{seasonLow.score}</p>
-              <div className="mt-1 space-y-0.5">
-                {seasonLowTied.map((r) => (
-                  <p key={r.id} className="text-sm text-gray-700 font-medium">
-                    {r.player.name}
-                    <span className="text-gray-400 font-normal">
-                      {" "}· W{r.week_number} · {r.course_half === "front9" ? "Front-9" : "Back-9"}
-                    </span>
-                  </p>
-                ))}
-              </div>
+      {/* ── Season Low Hero ── */}
+      <div className="rounded-2xl border-2 border-[#C9A84C]/50 bg-gradient-to-br from-[#C9A84C]/10 to-[#C9A84C]/5 p-5">
+        <div className="flex items-start gap-4">
+          <div className="text-3xl w-14 h-14 flex items-center justify-center rounded-xl bg-[#C9A84C]/20">
+            🏆
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-[#C9A84C] uppercase tracking-widest mb-0.5">Season Low</p>
+            <p className="text-4xl font-bold text-gray-900">{seasonLow.score}</p>
+            <div className="mt-1 space-y-0.5">
+              {seasonLowTied.map((r) => (
+                <p key={r.id} className="text-sm text-gray-700 font-medium">
+                  {r.player.name}
+                  <span className="text-gray-400 font-normal">
+                    {" "}· W{r.week_number} · {r.course_half === "front9" ? "Front-9" : "Back-9"}
+                  </span>
+                </p>
+              ))}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Most Improved */}
-        {mostImproved.length > 0 && (
-          <AchievementCard
-            icon="📈"
-            title="Most Improved"
-            description="Biggest drop in avg vs 2025 season avg"
-            accent="green"
-            earners={mostImproved.map((x) => ({
-              name: x.player.name,
-              detail: `${fmt1(x.seasonAvg)} avg (was ${fmt1(x.avg25)} in '25)`,
-            }))}
-          />
-        )}
+      {/* ── Hot Hand (Weekly Champions) ── */}
+      <section>
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          Hot Hand
+        </h2>
+        <div className="space-y-2">
+          {weeks.map((week) => {
+            const w = weekWinners.get(week)!;
+            return (
+              <div key={week} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3">
+                <span className="text-sm font-bold text-[#C9A84C] w-8">W{week}</span>
+                <span className="text-xl">🥇</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-gray-900">
+                    {w.players.map((p) => p.player.name).join(" & ")}
+                  </span>
+                </div>
+                <span className="text-sm font-bold text-gray-700 shrink-0">{w.score}</span>
+              </div>
+            );
+          })}
+          {weeks.length < 13 && (
+            <div className="px-4 py-2.5">
+              <span className="text-sm text-gray-300">· W{weeks.length + 1}–W13 not yet played</span>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Player Awards ── */}
+      <section className="space-y-4">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+          Player Awards
+        </h2>
 
         {/* Perfect Attendance */}
         {perfectAttendance.length > 0 && (
@@ -668,43 +683,6 @@ export default async function AchievementsPage() {
             }))}
           />
         )}
-      </section>
-
-      {/* ── Hot Hand (Weekly Champions) ── */}
-      <section>
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-          Hot Hand
-        </h2>
-        <div className="space-y-2">
-          {weeks.map((week) => {
-            const w = weekWinners.get(week)!;
-            return (
-              <div key={week} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3">
-                <span className="text-sm font-bold text-[#C9A84C] w-8">W{week}</span>
-                <span className="text-xl">🥇</span>
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-gray-900">
-                    {w.players.map((p) => p.player.name).join(" & ")}
-                  </span>
-                </div>
-                <span className="text-sm font-bold text-gray-700 shrink-0">{w.score}</span>
-              </div>
-            );
-          })}
-          {Array.from(
-            { length: Math.max(0, 13 - weeks.length) },
-            (_, i) => weeks.length + i + 1
-          ).map((w) => (
-            <div
-              key={w}
-              className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 opacity-30"
-            >
-              <span className="text-sm font-bold text-gray-400 w-8">W{w}</span>
-              <span className="text-xl grayscale">🥇</span>
-              <span className="text-sm text-gray-400">—</span>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* ── Section 1: Milestones ── */}
@@ -831,6 +809,18 @@ export default async function AchievementsPage() {
                 earners={[grinderEarner]}
               />
             )}
+            {mostImproved.length > 0 && (
+              <AchievementCard
+                icon="📈"
+                title="Most Improved"
+                description="Biggest drop in season avg vs 2025"
+                accent="green"
+                earners={mostImproved.map((x) => ({
+                  name: x.player.name,
+                  detail: `${fmt1(x.seasonAvg)} avg (was ${fmt1(x.avg25)} in '25)`,
+                }))}
+              />
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -848,6 +838,11 @@ export default async function AchievementsPage() {
               icon="⛏️"
               title="The Grinder"
               description="Most rounds played without winning a week"
+            />
+            <LockedCard
+              icon="📈"
+              title="Most Improved"
+              description="Biggest drop in season avg vs 2025"
             />
           </div>
         )}
