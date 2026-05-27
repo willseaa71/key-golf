@@ -196,7 +196,8 @@ export default async function HistoryPage() {
           Rankings history will build as more weeks are played.
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 overflow-x-auto">
+        <div className="overflow-x-auto -mx-4 px-4">
+          <div className="min-w-[700px]">
           <svg
             viewBox={`0 0 ${svgW} ${svgH}`}
             width={svgW}
@@ -318,6 +319,7 @@ export default async function HistoryPage() {
               );
             })}
           </svg>
+          </div>
         </div>
       )}
 
