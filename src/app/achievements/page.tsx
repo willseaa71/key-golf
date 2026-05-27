@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { holePar } from "@/lib/course";
+import { CollapsibleAchievementCard } from "./CollapsibleCard";
 
 export const metadata = { title: "Achievements — KEY Golf" };
 
@@ -150,16 +152,15 @@ export default async function AchievementsPage() {
     return allPlayers.find((p) => p.id === playerId)?.prior_averages.find((a) => a.season_year === 2025)?.average ?? null;
   }
 
-  // ── 1. Season Low ───────────────────────────────────────────────────────
+  // ── Season Low ──────────────────────────────────────────────────────────
 
   const seasonLow = allRounds.reduce(
     (best, r) => (r.total_score < best.score ? { score: r.total_score, round: r } : best),
     { score: Infinity, round: allRounds[0] }
   );
-  // Tied season lows
   const seasonLowTied = allRounds.filter((r) => r.total_score === seasonLow.score);
 
-  // ── 2. Week Winners ────────────────────────────────────────────────────
+  // ── Week Winners ────────────────────────────────────────────────────────
 
   const weekWinners = new Map<number, { score: number; players: typeof allRounds }>();
   for (const week of weeks) {
@@ -171,7 +172,7 @@ export default async function AchievementsPage() {
     });
   }
 
-  // ── 3. Most Improved (season avg vs 2025 avg) ───────────────────────────
+  // ── Most Improved ───────────────────────────────────────────────────────
 
   const improvements = allPlayers
     .filter((p) => {
@@ -188,26 +189,17 @@ export default async function AchievementsPage() {
     .sort((a, b) => a.diff - b.diff);
 
   const topImprovement = improvements[0] ?? null;
-  // Include all players tied for most improved (within 0.1)
   const mostImproved = topImprovement
     ? improvements.filter((x) => Math.abs(x.diff - topImprovement.diff) < 0.05)
     : [];
 
-  // ── 4. Beat the Book (beat 2025 avg in any round) ──────────────────────
-
-  const beatTheBook = allPlayers.filter((p) => {
-    const avg25 = prior2025(p.id);
-    if (avg25 === null) return false;
-    return (byPlayer.get(p.id) ?? []).some((r) => r.total_score < avg25);
-  });
-
-  // ── 5. Perfect Attendance ──────────────────────────────────────────────
+  // ── Perfect Attendance ──────────────────────────────────────────────────
 
   const perfectAttendance = allPlayers.filter(
     (p) => (byPlayer.get(p.id)?.length ?? 0) === weeksPlayed
   );
 
-  // ── 6. Hot Streak (3+ consecutive weeks beating running season avg) ─────
+  // ── Hot Streak (3+ consecutive weeks beating running season avg) ─────────
 
   const hotStreakers: { player: (typeof allPlayers)[0]; streak: number; weeks: number[] }[] = [];
   if (weeksPlayed >= 3) {
@@ -247,51 +239,345 @@ export default async function AchievementsPage() {
     }
   }
 
-  // ── 7. Steady Eddie (smallest score range, 2+ rounds) ──────────────────
+  // ── Hole Scores (for milestones) ─────────────────────────────────────────
 
-  const steadyEddie: { player: (typeof allPlayers)[0]; range: number; min: number; max: number }[] = [];
-  if (weeksPlayed >= 2) {
-    const candidates = allPlayers
-      .filter((p) => scores(p.id).length >= 2)
-      .map((p) => {
-        const s = scores(p.id);
-        return { player: p, range: Math.max(...s) - Math.min(...s), min: Math.min(...s), max: Math.max(...s) };
+  const hasAnyHoleScores = allRounds.some((r) => r.has_hole_scores);
+  const allHoleScores = hasAnyHoleScores
+    ? await db.holeScore.findMany({
+        where: { round: { season_id: season.id } },
+        include: { round: { include: { player: true } } },
       })
-      .sort((a, b) => a.range - b.range);
-    if (candidates.length > 0) {
-      const minRange = candidates[0].range;
-      steadyEddie.push(...candidates.filter((c) => c.range === minRange));
+    : [];
+
+  // ── Milestones ───────────────────────────────────────────────────────────
+
+  type MilestoneEarner = { name: string; detail: string };
+
+  let holeInOne: MilestoneEarner | null = null;
+  let eagle: MilestoneEarner | null = null;
+  let birdieMachine: MilestoneEarner | null = null;
+  let cleanCard: MilestoneEarner | null = null;
+
+  if (allHoleScores.length > 0) {
+    // Hole in One
+    const hoio = allHoleScores.find((hs) => hs.strokes === 1);
+    if (hoio) {
+      holeInOne = {
+        name: hoio.round.player.name,
+        detail: `Hole ${hoio.hole_number} · W${hoio.round.week_number}`,
+      };
     }
-  }
 
-  // ── 8. Comeback Kid (biggest week-over-week improvement) ───────────────
+    // Eagle (2+ under par on a hole)
+    const eagleHs = allHoleScores.find(
+      (hs) => hs.strokes <= holePar(hs.hole_number, hs.round.course_half) - 2
+    );
+    if (eagleHs) {
+      eagle = {
+        name: eagleHs.round.player.name,
+        detail: `Hole ${eagleHs.hole_number} · W${eagleHs.round.week_number}`,
+      };
+    }
 
-  type Comeback = { player: (typeof allPlayers)[0]; improvement: number; fromWeek: number; toWeek: number; from: number; to: number };
-  let topComeback: Comeback | null = null;
-  if (weeksPlayed >= 2) {
-    const comebacks: Comeback[] = [];
-    for (const player of allPlayers) {
-      const playerRounds = (byPlayer.get(player.id) ?? []).sort((a, b) => a.week_number - b.week_number);
-      for (let i = 1; i < playerRounds.length; i++) {
-        const prev = playerRounds[i - 1];
-        const curr = playerRounds[i];
-        const improvement = prev.total_score - curr.total_score;
-        if (improvement > 0) {
-          comebacks.push({ player, improvement, fromWeek: prev.week_number, toWeek: curr.week_number, from: prev.total_score, to: curr.total_score });
+    // Birdie Machine: most birdies in a single round
+    const birdiesByRound = new Map<
+      number,
+      { count: number; round: (typeof allHoleScores)[0]["round"] }
+    >();
+    for (const hs of allHoleScores) {
+      const par = holePar(hs.hole_number, hs.round.course_half);
+      if (hs.strokes === par - 1) {
+        const existing = birdiesByRound.get(hs.round_id);
+        if (existing) {
+          existing.count++;
+        } else {
+          birdiesByRound.set(hs.round_id, { count: 1, round: hs.round });
         }
       }
     }
-    comebacks.sort((a, b) => b.improvement - a.improvement);
-    topComeback = comebacks[0] ?? null;
+    if (birdiesByRound.size > 0) {
+      const best = [...birdiesByRound.values()].sort((a, b) => b.count - a.count)[0];
+      birdieMachine = {
+        name: best.round.player.name,
+        detail: `${best.count} birdie${best.count !== 1 ? "s" : ""} in a round · W${best.round.week_number}`,
+      };
+    }
+
+    // Clean Card: every hole at or under par in a round (9 holes recorded)
+    const hsByRound = new Map<number, (typeof allHoleScores)>();
+    for (const hs of allHoleScores) {
+      if (!hsByRound.has(hs.round_id)) hsByRound.set(hs.round_id, []);
+      hsByRound.get(hs.round_id)!.push(hs);
+    }
+    for (const hss of hsByRound.values()) {
+      if (hss.length < 9) continue;
+      const isClean = hss.every(
+        (hs) => hs.strokes <= holePar(hs.hole_number, hs.round.course_half)
+      );
+      if (isClean) {
+        const r = hss[0].round;
+        cleanCard = {
+          name: r.player.name,
+          detail: `${r.total_score} · W${r.week_number}`,
+        };
+        break;
+      }
+    }
+  }
+
+  const anyMilestoneFired = [holeInOne, eagle, birdieMachine, cleanCard].some(
+    (m) => m !== null
+  );
+
+  // ── Weekly Callouts ──────────────────────────────────────────────────────
+
+  type CalloutCard = {
+    icon: string;
+    title: string;
+    accent: "gold" | "green" | "blue" | "slate";
+    earners: { name: string; detail?: string }[];
+  };
+
+  const weeklyCallouts: CalloutCard[] = [];
+
+  if (weeksPlayed >= 1) {
+    const currentWeek = weeks[weeks.length - 1];
+    const prevWeek = weeks.length >= 2 ? weeks[weeks.length - 2] : null;
+    const currentWeekRounds = allRounds.filter((r) => r.week_number === currentWeek);
+
+    // Field avg this week
+    const fieldAvgThisWeek =
+      currentWeekRounds.reduce((s, r) => s + r.total_score, 0) /
+      currentWeekRounds.length;
+
+    // Bottom half of standings by season avg (higher avg = worse)
+    const standingsByAvg = allPlayers
+      .filter((p) => scores(p.id).length > 0)
+      .map((p) => ({ id: p.id, avg: playerAvg(scores(p.id))! }))
+      .sort((a, b) => a.avg - b.avg);
+    const halfwayIdx = Math.ceil(standingsByAvg.length / 2);
+    const bottomHalfIds = new Set(standingsByAvg.slice(halfwayIdx).map((x) => x.id));
+
+    // -- Icarus (must compute first for priority rule) --
+    const icarusPlayerIds = new Set<number>();
+    const icarusEarners: { name: string; detail?: string }[] = [];
+
+    for (const r of currentWeekRounds) {
+      const priorScores = (byPlayer.get(r.player_id) ?? [])
+        .filter((x) => x.week_number !== currentWeek)
+        .map((x) => x.total_score);
+      const priorAvg = playerAvg(priorScores);
+      if (priorAvg !== null && r.total_score >= priorAvg + 10) {
+        icarusPlayerIds.add(r.player_id);
+        icarusEarners.push({
+          name: r.player.name,
+          detail: `${r.total_score} (avg ${fmt1(priorAvg)} prior)`,
+        });
+      }
+    }
+    if (icarusEarners.length > 0) {
+      weeklyCallouts.push({ icon: "🌞", title: "Icarus", accent: "slate", earners: icarusEarners });
+    }
+
+    // -- Hungover (skip if Icarus) --
+    if (prevWeek !== null) {
+      const hungoverEarners: { name: string; detail?: string }[] = [];
+      for (const r of currentWeekRounds) {
+        if (icarusPlayerIds.has(r.player_id)) continue;
+        const prevRound = (byPlayer.get(r.player_id) ?? []).find(
+          (x) => x.week_number === prevWeek
+        );
+        if (prevRound && r.total_score >= prevRound.total_score + 5) {
+          hungoverEarners.push({
+            name: r.player.name,
+            detail: `${prevRound.total_score} → ${r.total_score} (+${r.total_score - prevRound.total_score})`,
+          });
+        }
+      }
+      if (hungoverEarners.length > 0) {
+        weeklyCallouts.push({ icon: "🍺", title: "Hungover", accent: "slate", earners: hungoverEarners });
+      }
+    }
+
+    // -- Redemption Arc --
+    if (prevWeek !== null) {
+      const redemptionEarners: { name: string; detail?: string }[] = [];
+      for (const r of currentWeekRounds) {
+        const prevRound = (byPlayer.get(r.player_id) ?? []).find(
+          (x) => x.week_number === prevWeek
+        );
+        if (prevRound && prevRound.total_score >= r.total_score + 5) {
+          redemptionEarners.push({
+            name: r.player.name,
+            detail: `${prevRound.total_score} → ${r.total_score} (−${prevRound.total_score - r.total_score})`,
+          });
+        }
+      }
+      if (redemptionEarners.length > 0) {
+        weeklyCallouts.push({ icon: "⛳", title: "Redemption Arc", accent: "green", earners: redemptionEarners });
+      }
+    }
+
+    // -- Groundhog Day (same score 3+ consecutive weeks, ending on currentWeek) --
+    const groundhogEarners: { name: string; detail?: string }[] = [];
+    for (const r of currentWeekRounds) {
+      const playerRounds = (byPlayer.get(r.player_id) ?? []).sort(
+        (a, b) => a.week_number - b.week_number
+      );
+      if (playerRounds.length < 3) continue;
+      const last3 = playerRounds.slice(-3);
+      // Must end on current week
+      if (last3[2].week_number !== currentWeek) continue;
+      // Must be consecutive week numbers
+      if (
+        last3[1].week_number !== last3[0].week_number + 1 ||
+        last3[2].week_number !== last3[1].week_number + 1
+      ) continue;
+      if (last3.every((x) => x.total_score === r.total_score)) {
+        groundhogEarners.push({
+          name: r.player.name,
+          detail: `${r.total_score} three weeks running`,
+        });
+      }
+    }
+    if (groundhogEarners.length > 0) {
+      weeklyCallouts.push({ icon: "🔄", title: "Groundhog Day", accent: "blue", earners: groundhogEarners });
+    }
+
+    // -- The Undertaker (beat field avg by 5+) --
+    const undertakerEarners: { name: string; detail?: string }[] = [];
+    for (const r of currentWeekRounds) {
+      if (r.total_score <= fieldAvgThisWeek - 5) {
+        undertakerEarners.push({
+          name: r.player.name,
+          detail: `${r.total_score} (field avg ${fmt1(fieldAvgThisWeek)})`,
+        });
+      }
+    }
+    if (undertakerEarners.length > 0) {
+      weeklyCallouts.push({ icon: "💀", title: "The Undertaker", accent: "gold", earners: undertakerEarners });
+    }
+
+    // -- Last Call (lowest score among bottom-half players this week) --
+    const bottomHalfRoundsThisWeek = currentWeekRounds.filter((r) =>
+      bottomHalfIds.has(r.player_id)
+    );
+    if (bottomHalfRoundsThisWeek.length > 0) {
+      const minBH = Math.min(...bottomHalfRoundsThisWeek.map((r) => r.total_score));
+      const lastCallEarners = bottomHalfRoundsThisWeek
+        .filter((r) => r.total_score === minBH)
+        .map((r) => ({ name: r.player.name, detail: String(r.total_score) }));
+      weeklyCallouts.push({ icon: "🔔", title: "Last Call", accent: "slate", earners: lastCallEarners });
+    }
+
+    // -- Déjà Vu (matched personal season low exactly, 2+ rounds) --
+    const dejavuEarners: { name: string; detail?: string }[] = [];
+    for (const r of currentWeekRounds) {
+      const allPlayerRounds = byPlayer.get(r.player_id) ?? [];
+      if (allPlayerRounds.length < 2) continue;
+      const priorMin = Math.min(
+        ...allPlayerRounds
+          .filter((x) => x.week_number !== currentWeek)
+          .map((x) => x.total_score)
+      );
+      if (r.total_score === priorMin) {
+        dejavuEarners.push({
+          name: r.player.name,
+          detail: `${r.total_score} — matched season low`,
+        });
+      }
+    }
+    if (dejavuEarners.length > 0) {
+      weeklyCallouts.push({ icon: "👻", title: "Déjà Vu", accent: "blue", earners: dejavuEarners });
+    }
+
+    // -- Tough Crowd (new personal best but finished last) --
+    const weekHighScore = Math.max(...currentWeekRounds.map((r) => r.total_score));
+    const toughCrowdEarners: { name: string; detail?: string }[] = [];
+    for (const r of currentWeekRounds) {
+      if (r.total_score !== weekHighScore) continue;
+      const priorScores2 = (byPlayer.get(r.player_id) ?? [])
+        .filter((x) => x.week_number !== currentWeek)
+        .map((x) => x.total_score);
+      if (priorScores2.length === 0) continue;
+      const priorMin = Math.min(...priorScores2);
+      if (r.total_score < priorMin) {
+        toughCrowdEarners.push({
+          name: r.player.name,
+          detail: `${r.total_score} (personal best, still last)`,
+        });
+      }
+    }
+    if (toughCrowdEarners.length > 0) {
+      weeklyCallouts.push({ icon: "😤", title: "Tough Crowd", accent: "slate", earners: toughCrowdEarners });
+    }
+
+    // -- Sleeper (first week beating 2025 avg, after 2+ prior weeks above it) --
+    if (prevWeek !== null) {
+      const sleeperEarners: { name: string; detail?: string }[] = [];
+      for (const r of currentWeekRounds) {
+        const avg25 = prior2025(r.player_id);
+        if (avg25 === null) continue;
+        if (r.total_score >= avg25) continue; // didn't beat it this week
+        const priorRoundsForPlayer = (byPlayer.get(r.player_id) ?? []).filter(
+          (x) => x.week_number !== currentWeek
+        );
+        if (priorRoundsForPlayer.length < 2) continue; // need at least 2 prior weeks
+        if (priorRoundsForPlayer.some((x) => x.total_score < avg25)) continue; // already beat it before
+        sleeperEarners.push({
+          name: r.player.name,
+          detail: `${r.total_score} (book: ${fmt1(avg25)})`,
+        });
+      }
+      if (sleeperEarners.length > 0) {
+        weeklyCallouts.push({ icon: "😴", title: "Sleeper", accent: "green", earners: sleeperEarners });
+      }
+    }
+  }
+
+  // ── End of Season ────────────────────────────────────────────────────────
+
+  const endOfSeasonUnlocked = weeksPlayed >= 13;
+  let ironManEarners: { name: string }[] = [];
+  let mostConsistentEarner: { name: string; detail: string } | null = null;
+  let grinderEarner: { name: string; detail: string } | null = null;
+
+  if (endOfSeasonUnlocked) {
+    ironManEarners = allPlayers
+      .filter((p) => (byPlayer.get(p.id)?.length ?? 0) === 13)
+      .map((p) => ({ name: p.name }));
+
+    const fullSeasonPlayers = allPlayers
+      .filter((p) => (byPlayer.get(p.id)?.length ?? 0) >= 1)
+      .map((p) => {
+        const s = scores(p.id);
+        return { player: p, range: Math.max(...s) - Math.min(...s) };
+      })
+      .sort((a, b) => a.range - b.range);
+    if (fullSeasonPlayers.length > 0) {
+      mostConsistentEarner = {
+        name: fullSeasonPlayers[0].player.name,
+        detail: `Range: ${fullSeasonPlayers[0].range}`,
+      };
+    }
+
+    const weekWinnerIds = new Set<number>();
+    for (const w of weekWinners.values()) {
+      w.players.forEach((p) => weekWinnerIds.add(p.player_id));
+    }
+    const grinderCandidates = allPlayers
+      .filter((p) => !weekWinnerIds.has(p.id) && (byPlayer.get(p.id)?.length ?? 0) > 0)
+      .map((p) => ({ player: p, rounds: byPlayer.get(p.id)!.length }))
+      .sort((a, b) => b.rounds - a.rounds);
+    if (grinderCandidates.length > 0) {
+      grinderEarner = {
+        name: grinderCandidates[0].player.name,
+        detail: `${grinderCandidates[0].rounds} rounds, 0 wins`,
+      };
+    }
   }
 
   // ── Render ──────────────────────────────────────────────────────────────
-
-  const lockedCount = [
-    hotStreakers.length === 0,
-    steadyEddie.length === 0,
-    topComeback === null,
-  ].filter(Boolean).length;
 
   return (
     <main className="max-w-lg mx-auto px-4 py-8 space-y-8">
@@ -300,37 +586,94 @@ export default async function AchievementsPage() {
         <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">{season.name}</p>
         <h1 className="text-2xl font-bold">Achievements</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {weeksPlayed} of 13 weeks played · {lockedCount > 0 ? `${lockedCount} unlocking as the season progresses` : "All achievements unlocked"}
+          {weeksPlayed} of 13 weeks played
         </p>
       </div>
 
-      {/* ── Season Low Hero ── */}
-      <div className="rounded-2xl border-2 border-[#C9A84C]/50 bg-gradient-to-br from-[#C9A84C]/10 to-[#C9A84C]/5 p-5">
-        <div className="flex items-start gap-4">
-          <div className="text-3xl w-14 h-14 flex items-center justify-center rounded-xl bg-[#C9A84C]/20">
-            🏆
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-[#C9A84C] uppercase tracking-widest mb-0.5">Season Low</p>
-            <p className="text-4xl font-bold text-gray-900">{seasonLow.score}</p>
-            <div className="mt-1 space-y-0.5">
-              {seasonLowTied.map((r) => (
-                <p key={r.id} className="text-sm text-gray-700 font-medium">
-                  {r.player.name}
-                  <span className="text-gray-400 font-normal">
-                    {" "}· W{r.week_number} · {r.course_half === "front9" ? "Front-9" : "Back-9"}
-                  </span>
-                </p>
-              ))}
+      {/* ── Section 2: Season Leaders ── */}
+      <section className="space-y-4">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+          Season Leaders
+        </h2>
+
+        {/* Season Low Hero */}
+        <div className="rounded-2xl border-2 border-[#C9A84C]/50 bg-gradient-to-br from-[#C9A84C]/10 to-[#C9A84C]/5 p-5">
+          <div className="flex items-start gap-4">
+            <div className="text-3xl w-14 h-14 flex items-center justify-center rounded-xl bg-[#C9A84C]/20">
+              🏆
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-[#C9A84C] uppercase tracking-widest mb-0.5">Season Low</p>
+              <p className="text-4xl font-bold text-gray-900">{seasonLow.score}</p>
+              <div className="mt-1 space-y-0.5">
+                {seasonLowTied.map((r) => (
+                  <p key={r.id} className="text-sm text-gray-700 font-medium">
+                    {r.player.name}
+                    <span className="text-gray-400 font-normal">
+                      {" "}· W{r.week_number} · {r.course_half === "front9" ? "Front-9" : "Back-9"}
+                    </span>
+                  </p>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Week Champions ── */}
+        {/* Most Improved */}
+        {mostImproved.length > 0 && (
+          <AchievementCard
+            icon="📈"
+            title="Most Improved"
+            description="Biggest drop in avg vs 2025 season avg"
+            accent="green"
+            earners={mostImproved.map((x) => ({
+              name: x.player.name,
+              detail: `${fmt1(x.seasonAvg)} avg (was ${fmt1(x.avg25)} in '25)`,
+            }))}
+          />
+        )}
+
+        {/* Perfect Attendance */}
+        {perfectAttendance.length > 0 && (
+          perfectAttendance.length > 3 ? (
+            <CollapsibleAchievementCard
+              icon="📅"
+              title="Perfect Attendance"
+              description={`Played every week so far (${weeksPlayed} of 13)`}
+              accent="blue"
+              earners={perfectAttendance.map((p) => ({ name: p.name }))}
+              collapseAfter={3}
+            />
+          ) : (
+            <AchievementCard
+              icon="📅"
+              title="Perfect Attendance"
+              description={`Played every week so far (${weeksPlayed} of 13)`}
+              accent="blue"
+              earners={perfectAttendance.map((p) => ({ name: p.name }))}
+            />
+          )
+        )}
+
+        {/* Hot Streak (when fired) */}
+        {hotStreakers.length > 0 && (
+          <AchievementCard
+            icon="🔥"
+            title="Hot Streak"
+            description="Beat their running season avg 3+ weeks in a row"
+            accent="gold"
+            earners={hotStreakers.map((h) => ({
+              name: h.player.name,
+              detail: `${h.streak} consecutive weeks (W${h.weeks[0]}–W${h.weeks[h.weeks.length - 1]})`,
+            }))}
+          />
+        )}
+      </section>
+
+      {/* ── Hot Hand (Weekly Champions) ── */}
       <section>
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-          Weekly Champions
+          Hot Hand
         </h2>
         <div className="space-y-2">
           {weeks.map((week) => {
@@ -348,9 +691,14 @@ export default async function AchievementsPage() {
               </div>
             );
           })}
-          {/* Placeholder future weeks */}
-          {Array.from({ length: Math.max(0, 13 - weeks.length) }, (_, i) => weeks.length + i + 1).map((w) => (
-            <div key={w} className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 opacity-30">
+          {Array.from(
+            { length: Math.max(0, 13 - weeks.length) },
+            (_, i) => weeks.length + i + 1
+          ).map((w) => (
+            <div
+              key={w}
+              className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 opacity-30"
+            >
               <span className="text-sm font-bold text-gray-400 w-8">W{w}</span>
               <span className="text-xl grayscale">🥇</span>
               <span className="text-sm text-gray-400">—</span>
@@ -359,124 +707,164 @@ export default async function AchievementsPage() {
         </div>
       </section>
 
-      {/* ── Player Achievements ── */}
+      {/* ── Section 1: Milestones ── */}
       <section>
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-          Player Awards
+          Milestones
         </h2>
-        <div className="space-y-3">
-          {/* Most Improved */}
-          {mostImproved.length > 0 && (
-            <AchievementCard
-              icon="📈"
-              title="Most Improved"
-              description="Biggest drop in avg vs 2025 season"
-              accent="green"
-              earners={mostImproved.map((x) => ({
-                name: x.player.name,
-                detail: `${fmt1(x.seasonAvg)} avg (was ${fmt1(x.avg25)} in '25)`,
-              }))}
-            />
-          )}
-
-          {/* Beat the Book */}
-          {beatTheBook.length > 0 && (
-            <AchievementCard
-              icon="🎯"
-              title="Beat the Book"
-              description="Beat their 2025 season average in a round"
-              accent="green"
-              earners={beatTheBook.map((p) => {
-                const avg25 = prior2025(p.id)!;
-                const best = Math.min(...scores(p.id));
-                return { name: p.name, detail: `${best} (book: ${fmt1(avg25)})` };
-              })}
-            />
-          )}
-
-          {/* Perfect Attendance */}
-          {perfectAttendance.length > 0 && weeksPlayed >= 1 && (
-            <AchievementCard
-              icon="📅"
-              title="Perfect Attendance"
-              description={`Played every week so far (${weeksPlayed} of 13)`}
-              accent="blue"
-              earners={perfectAttendance.map((p) => ({ name: p.name }))}
-            />
-          )}
-
-          {/* Hot Streak */}
-          {hotStreakers.length > 0 && (
-            <AchievementCard
-              icon="🔥"
-              title="Hot Streak"
-              description="Beat their running season avg 3+ weeks in a row"
-              accent="gold"
-              earners={hotStreakers.map((h) => ({
-                name: h.player.name,
-                detail: `${h.streak} consecutive weeks (W${h.weeks[0]}–W${h.weeks[h.weeks.length - 1]})`,
-              }))}
-            />
-          )}
-
-          {/* Steady Eddie */}
-          {steadyEddie.length > 0 && (
-            <AchievementCard
-              icon="🤝"
-              title="Steady Eddie"
-              description="Most consistent scorer — tightest score range this season"
-              accent="blue"
-              earners={steadyEddie.map((s) => ({
-                name: s.player.name,
-                detail: `${s.min}–${s.max} (range: ${s.range})`,
-              }))}
-            />
-          )}
-
-          {/* Comeback Kid */}
-          {topComeback && (
-            <AchievementCard
-              icon="⛳"
-              title="Comeback Kid"
-              description="Biggest single-week score improvement"
-              accent="green"
-              earners={[{
-                name: topComeback.player.name,
-                detail: `W${topComeback.fromWeek} ${topComeback.from} → W${topComeback.toWeek} ${topComeback.to} (−${topComeback.improvement})`,
-              }]}
-            />
-          )}
-        </div>
+        {anyMilestoneFired ? (
+          <div className="space-y-3">
+            {holeInOne && (
+              <AchievementCard
+                icon="🎱"
+                title="Hole in One"
+                description="Aced a hole"
+                accent="gold"
+                earners={[holeInOne]}
+              />
+            )}
+            {eagle && (
+              <AchievementCard
+                icon="🦅"
+                title="Eagle"
+                description="2 under par on a single hole"
+                accent="gold"
+                earners={[eagle]}
+              />
+            )}
+            {birdieMachine && (
+              <AchievementCard
+                icon="🐦"
+                title="Birdie Machine"
+                description="Most birdies in a single round"
+                accent="green"
+                earners={[birdieMachine]}
+              />
+            )}
+            {cleanCard && (
+              <AchievementCard
+                icon="✅"
+                title="Clean Card"
+                description="Every hole at or under par"
+                accent="green"
+                earners={[cleanCard]}
+              />
+            )}
+            {/* Show locked cards for milestones not yet fired */}
+            {!holeInOne && (
+              <LockedCard icon="🎱" title="Hole in One" description="Ace a hole" />
+            )}
+            {!eagle && (
+              <LockedCard icon="🦅" title="Eagle" description="2 under par on a single hole" />
+            )}
+            {!birdieMachine && (
+              <LockedCard icon="🐦" title="Birdie Machine" description="Most birdies in a single round" />
+            )}
+            {!cleanCard && (
+              <LockedCard icon="✅" title="Clean Card" description="Every hole at or under par" />
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <LockedCard icon="🎱" title="Hole in One" description="Ace a hole" />
+            <LockedCard icon="🦅" title="Eagle" description="2 under par on a single hole" />
+            <LockedCard icon="🐦" title="Birdie Machine" description="Most birdies in a single round" />
+            <LockedCard icon="✅" title="Clean Card" description="Every hole at or under par" />
+          </div>
+        )}
       </section>
 
-      {/* ── Locked ── */}
-      {lockedCount > 0 && (
+      {/* ── Section 3: Weekly Callouts ── */}
+      <section>
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          Week {weeksPlayed} Callouts
+        </h2>
+        {weeklyCallouts.length > 0 ? (
+          <div className="space-y-3">
+            {weeklyCallouts.map((c, i) => (
+              <AchievementCard
+                key={i}
+                icon={c.icon}
+                title={c.title}
+                description=""
+                accent={c.accent}
+                earners={c.earners}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 italic">No callouts this week.</p>
+        )}
+      </section>
+
+      {/* ── Section 4: End of Season ── */}
+      <section>
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          End of Season
+        </h2>
+        {endOfSeasonUnlocked ? (
+          <div className="space-y-3">
+            {ironManEarners.length > 0 && (
+              <AchievementCard
+                icon="🏋️"
+                title="Iron Man"
+                description="Perfect attendance — played all 13 weeks"
+                accent="gold"
+                earners={ironManEarners}
+              />
+            )}
+            {mostConsistentEarner && (
+              <AchievementCard
+                icon="🎯"
+                title="Most Consistent"
+                description="Tightest score range across the full season"
+                accent="blue"
+                earners={[mostConsistentEarner]}
+              />
+            )}
+            {grinderEarner && (
+              <AchievementCard
+                icon="⛏️"
+                title="The Grinder"
+                description="Most rounds played without winning a week"
+                accent="slate"
+                earners={[grinderEarner]}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <LockedCard
+              icon="🏋️"
+              title="Iron Man"
+              description="Perfect attendance all 13 weeks"
+            />
+            <LockedCard
+              icon="🎯"
+              title="Most Consistent"
+              description="Tightest score range across the full season"
+            />
+            <LockedCard
+              icon="⛏️"
+              title="The Grinder"
+              description="Most rounds played without winning a week"
+            />
+          </div>
+        )}
+      </section>
+
+      {/* ── Coming This Season (Hot Streak if not yet fired) ── */}
+      {hotStreakers.length === 0 && (
         <section>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-            Coming this season
+            Coming This Season
           </h2>
           <div className="space-y-3">
-            {hotStreakers.length === 0 && (
-              <LockedCard
-                icon="🔥"
-                title="Hot Streak"
-                description="Beat your running season avg 3 weeks in a row"
-              />
-            )}
-            {steadyEddie.length === 0 && (
-              <LockedCard
-                icon="🤝"
-                title="Steady Eddie"
-                description="Most consistent scorer across all rounds"
-              />
-            )}
-            {topComeback === null && (
-              <LockedCard
-                icon="⛳"
-                title="Comeback Kid"
-                description="Biggest single-week score improvement"
-              />
-            )}
+            <LockedCard
+              icon="🔥"
+              title="Hot Streak"
+              description="Beat your running season avg 3 weeks in a row"
+            />
           </div>
         </section>
       )}
