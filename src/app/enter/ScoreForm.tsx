@@ -97,14 +97,8 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
 
   return (
     <>
-    <div className="flex items-center justify-between mb-8">
+    <div className="mb-8">
       <h1 className="text-2xl font-bold">{view === "confirm" ? "Confirm" : "Enter Score"}</h1>
-      <Link
-        href="/results"
-        className="text-sm text-[#006747] font-medium border border-[#006747] rounded-lg px-3 py-1.5"
-      >
-        Leaderboard →
-      </Link>
     </div>
     <form ref={formRef} action={formAction} noValidate>
       {/* Hidden fields */}
@@ -168,14 +162,14 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Course half <span className="text-red-500">*</span>
             </label>
-            <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            <div className="flex gap-1 rounded-xl bg-gray-100 p-1">
               <button
                 type="button"
                 onClick={() => setCourseHalf("front9")}
-                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   courseHalf === "front9"
-                    ? "bg-[#006747] text-white"
-                    : "bg-white text-gray-600"
+                    ? "bg-[#006747] text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-800"
                 }`}
               >
                 Front-9
@@ -183,10 +177,10 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
               <button
                 type="button"
                 onClick={() => setCourseHalf("back9")}
-                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   courseHalf === "back9"
-                    ? "bg-[#006747] text-white"
-                    : "bg-white text-gray-600"
+                    ? "bg-[#006747] text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-800"
                 }`}
               >
                 Back-9
@@ -199,14 +193,14 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Score type
             </label>
-            <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            <div className="flex gap-1 rounded-xl bg-gray-100 p-1">
               <button
                 type="button"
                 onClick={() => setMode("hole")}
-                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   mode === "hole"
-                    ? "bg-[#006747] text-white"
-                    : "bg-white text-gray-600"
+                    ? "bg-[#006747] text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-800"
                 }`}
               >
                 Hole-by-hole
@@ -214,10 +208,10 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
               <button
                 type="button"
                 onClick={() => setMode("total")}
-                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   mode === "total"
-                    ? "bg-[#006747] text-white"
-                    : "bg-white text-gray-600"
+                    ? "bg-[#006747] text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-800"
                 }`}
               >
                 Total only
@@ -377,6 +371,14 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
         </div>
       )}
     </form>
+    <div className="mt-6">
+      <Link
+        href="/"
+        className="block w-full text-center py-3 rounded-xl border border-gray-300 text-sm text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+      >
+        ← Home
+      </Link>
+    </div>
     </>
   );
 }
