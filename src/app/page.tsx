@@ -18,42 +18,30 @@ const NAV_CARDS = [
     href: "/enter",
     icon: "⛳",
     label: "Enter Score",
-    desc: "Submit your weekly score",
     primary: true,
   },
   {
     href: "/results",
     icon: "🏆",
     label: "Standings",
-    desc: "Season leaderboard & player stats",
     primary: false,
   },
   {
     href: "/scorecard",
     icon: "📋",
     label: "Scorecard",
-    desc: "Full week-by-week score grid",
     primary: false,
   },
   {
     href: "/achievements",
     icon: "🎖️",
     label: "Achievements",
-    desc: "Awards & weekly champions",
     primary: false,
   },
   {
     href: "/stats",
     icon: "📊",
     label: "Stats",
-    desc: "Hole difficulty & scoring breakdown",
-    primary: false,
-  },
-  {
-    href: "/history",
-    icon: "📈",
-    label: "History",
-    desc: "Week-by-week ranking progression",
     primary: false,
   },
 ] as const;
@@ -77,10 +65,7 @@ export default async function HomePage() {
             className="col-span-2 flex items-center gap-4 rounded-xl bg-[#006747] text-white px-5 py-4 hover:bg-[#005236] transition-colors"
           >
             <span className="text-2xl leading-none">{card.icon}</span>
-            <div>
-              <p className="font-semibold text-sm">{card.label}</p>
-              <p className="text-xs text-white/70">{card.desc}</p>
-            </div>
+            <p className="font-semibold text-lg">{card.label}</p>
           </Link>
         ) : (
           <Link
@@ -89,8 +74,7 @@ export default async function HomePage() {
             className="flex flex-col items-start gap-1 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 px-4 py-4 transition-colors"
           >
             <span className="text-2xl leading-none">{card.icon}</span>
-            <p className="font-semibold text-sm text-gray-900 mt-1">{card.label}</p>
-            <p className="text-xs text-gray-500">{card.desc}</p>
+            <p className="font-semibold text-base text-gray-900 mt-1">{card.label}</p>
           </Link>
         )
       )}
@@ -197,8 +181,8 @@ export default async function HomePage() {
 
       {/* Mini leaderboard */}
       {top5.length > 0 && (
-        <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+        <section className="border-t border-gray-200 pt-6 mt-6">
+          <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-3">
             Top Players · Season Avg
           </h2>
           <div className="rounded-xl border border-gray-200 overflow-hidden">
