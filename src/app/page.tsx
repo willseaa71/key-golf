@@ -13,37 +13,13 @@ function fmt(n: number | null) {
   return n === null ? "—" : n.toFixed(1);
 }
 
-const NAV_CARDS = [
-  {
-    href: "/enter",
-    icon: "⛳",
-    label: "Enter Score",
-    primary: true,
-  },
-  {
-    href: "/results",
-    icon: "🏆",
-    label: "Standings",
-    primary: false,
-  },
-  {
-    href: "/scorecard",
-    icon: "📋",
-    label: "Scorecard",
-    primary: false,
-  },
-  {
-    href: "/achievements",
-    icon: "🎖️",
-    label: "Achievements",
-    primary: false,
-  },
-  {
-    href: "/stats",
-    icon: "📊",
-    label: "Stats",
-    primary: false,
-  },
+const ENTER_CARD = { href: "/enter", icon: "⛳", label: "Enter Score" } as const;
+
+const NAV_PILLS = [
+  { href: "/results",      icon: "🏆", label: "Standings"    },
+  { href: "/scorecard",    icon: "📋", label: "Scorecard"    },
+  { href: "/achievements", icon: "🥇", label: "Achievements" },
+  { href: "/stats",        icon: "📊", label: "Stats"        },
 ] as const;
 
 export default async function HomePage() {
@@ -54,30 +30,34 @@ export default async function HomePage() {
     },
   });
 
-  // Nav grid is shown regardless
+  // Nav is shown regardless
   const navGrid = (
-    <div className="grid grid-cols-2 gap-3">
-      {NAV_CARDS.map((card) =>
-        card.primary ? (
+    <div className="space-y-3">
+      {/* Enter Score CTA — unchanged */}
+      <Link
+        href={ENTER_CARD.href}
+        className="col-span-2 flex items-center gap-4 rounded-xl bg-[#006747] text-white px-5 py-4 hover:bg-[#005236] transition-colors"
+      >
+        <span className="text-2xl leading-none">{ENTER_CARD.icon}</span>
+        <p className="font-semibold text-lg">{ENTER_CARD.label}</p>
+      </Link>
+
+      {/* Horizontal pill rows */}
+      <div className="space-y-2">
+        {NAV_PILLS.map((card) => (
           <Link
             key={card.href}
             href={card.href}
-            className="col-span-2 flex items-center gap-4 rounded-xl bg-[#006747] text-white px-5 py-4 hover:bg-[#005236] transition-colors"
+            className="flex items-center gap-4 px-4 py-4 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
           >
-            <span className="text-2xl leading-none">{card.icon}</span>
-            <p className="font-semibold text-lg">{card.label}</p>
+            <span className="text-2xl w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100">
+              {card.icon}
+            </span>
+            <span className="flex-1 text-base font-semibold text-gray-900">{card.label}</span>
+            <span className="text-gray-400 text-lg">›</span>
           </Link>
-        ) : (
-          <Link
-            key={card.href}
-            href={card.href}
-            className="flex flex-col items-start gap-1 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 px-4 py-4 transition-colors"
-          >
-            <span className="text-2xl leading-none">{card.icon}</span>
-            <p className="font-semibold text-base text-gray-900 mt-1">{card.label}</p>
-          </Link>
-        )
-      )}
+        ))}
+      </div>
     </div>
   );
 
