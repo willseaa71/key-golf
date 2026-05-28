@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { db } from "@/lib/db";
 import { holePar } from "@/lib/course";
 import { SeasonChart } from "./SeasonChart";
@@ -521,7 +522,10 @@ export default async function ResultsPage({
       <hr className="border-gray-200" />
       <section>
         <h2 className="font-semibold text-lg mb-1">Season Standings</h2>
-        <p className="text-xs text-gray-400 mt-0.5 mb-3">Ranked by round average · lower is better</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs text-gray-400">Ranked by round average · lower is better</p>
+          <p className="text-xs text-[#006747] font-medium">Tap a player for stats →</p>
+        </div>
 
         <div className="rounded-xl border border-gray-200 overflow-hidden">
           <table className="w-full text-sm">
@@ -589,8 +593,10 @@ export default async function ResultsPage({
                     <td className="px-3 py-2.5 text-right text-gray-500 hidden sm:table-cell">
                       {fmt(p2024)}
                     </td>
-                    <td className="px-2 py-2.5 text-gray-300 text-lg">
-                      <Link href={playerHref}>›</Link>
+                    <td className="px-2 py-2.5">
+                      <Link href={playerHref} className="flex items-center justify-center">
+                        <ChevronRight size={16} className="text-[#006747]" />
+                      </Link>
                     </td>
                   </tr>
                 );
