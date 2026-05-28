@@ -23,14 +23,13 @@ export function HoleScorecard({ holes, courseHalf, holeAvgs, total }: HoleScorec
   const sorted  = [...holes].sort((a, b) => a.hole_number - b.hole_number);
   const hasAvgs = Object.keys(holeAvgs).length > 0;
 
-  // Shared cell size classes — w-7 (28px) keeps the table within ~290px total
-  const cellW   = "w-7 min-w-0";
-  const thBase  = `text-center text-[10px] font-medium text-gray-500 border border-gray-200 px-0 py-1 ${cellW}`;
-  const tdBase  = `text-center text-xs border border-gray-200 px-0 py-1.5 ${cellW}`;
+  // Cells stretch to fill available width — no fixed pixel width
+  const thBase  = `text-center text-[10px] font-medium text-gray-500 border border-gray-200 px-0 py-1`;
+  const tdBase  = `text-center text-xs border border-gray-200 px-0 py-1.5`;
 
   return (
     <div className="overflow-x-auto">
-      <table className="border-collapse text-sm">
+      <table className="border-collapse text-sm w-full table-fixed">
         {/* ── Header row: hole numbers ── */}
         <thead>
           <tr>
