@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { WeatherWidget } from "./results/WeatherWidget";
-import { Flag, Trophy, ClipboardList, Award, BarChart2 } from "lucide-react";
+import { Flag, Trophy, ClipboardList, Award, BarChart2, ChevronRight } from "lucide-react";
 
 export const metadata = { title: "KEY Golf" };
 
@@ -55,7 +55,7 @@ export default async function HomePage() {
               {card.icon}
             </span>
             <span className="flex-1 text-base font-semibold text-gray-900">{card.label}</span>
-            <span className="text-gray-400 text-lg">›</span>
+            <ChevronRight size={16} className="text-[#006747]" />
           </Link>
         ))}
       </div>
@@ -162,7 +162,7 @@ export default async function HomePage() {
 
       {/* Mini leaderboard */}
       {top5.length > 0 && (
-        <section className="border-t border-gray-200 pt-6 mt-6">
+        <section className="border-t border-[#006747] pt-6 mt-6">
           <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-3">
             Top Players · Season Avg
           </h2>
@@ -179,11 +179,6 @@ export default async function HomePage() {
                 <span className="text-sm font-semibold text-gray-700">{fmt(seasonAvg)}</span>
               </div>
             ))}
-          </div>
-          <div className="mt-2 text-right">
-            <Link href="/results" className="text-xs font-medium text-[#006747] hover:underline">
-              View all standings →
-            </Link>
           </div>
         </section>
       )}
