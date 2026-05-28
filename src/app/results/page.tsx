@@ -413,6 +413,19 @@ export default async function ResultsPage({
                     </div>
                   ))}
                 </div>
+                <div className="flex gap-3 mt-2 flex-wrap">
+                  {[
+                    { bg: "#C9A84C", fg: "white", label: "Easiest" },
+                    { bg: "#006747", fg: "white", label: "Easy" },
+                    { bg: "#E5E7EB", fg: "#6B7280", label: "Mid" },
+                    { bg: "#EF4444", fg: "white", label: "Hardest" },
+                  ].map(({ bg, fg, label }) => (
+                    <div key={label} className="flex items-center gap-1">
+                      <span className="w-3 h-3 rounded-sm inline-block shrink-0" style={{ backgroundColor: bg }} />
+                      <span className="text-[10px] text-gray-400">{label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
