@@ -333,7 +333,7 @@ export default async function ResultsPage({
   });
 
   return (
-    <main className="max-w-lg mx-auto px-4 py-8 space-y-8">
+    <main className="max-w-lg mx-auto px-4 py-8 space-y-8 overflow-x-hidden">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -632,10 +632,10 @@ export default async function ResultsPage({
           Season scorecard
         </Link>
         <Link
-          href="/history"
+          href="/"
           className="flex-1 text-center py-3 rounded-xl border border-gray-300 text-sm text-gray-600 font-medium hover:bg-gray-50"
         >
-          Season history
+          Home
         </Link>
         <Link
           href="/enter"
