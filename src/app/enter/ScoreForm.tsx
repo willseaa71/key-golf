@@ -33,7 +33,7 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
 
   const [playerId, setPlayerId] = useState<string>("");
   const [date, setDate] = useState<string>(todayString());
-  const [courseHalf, setCourseHalf] = useState<"front9" | "back9" | "">("");
+  const [courseHalf, setCourseHalf] = useState<"front9" | "back9">("front9");
   const [mode, setMode] = useState<"hole" | "total">("hole");
   const [holes, setHoles] = useState<string[]>(EMPTY_HOLES);
   const [totalScore, setTotalScore] = useState<string>("");
@@ -59,7 +59,6 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
 
     if (!playerId) return setClientError("Please select a player.");
     if (!date) return setClientError("Please pick a date.");
-    if (!courseHalf) return setClientError("Please select Front-9 or Back-9.");
 
     if (mode === "hole") {
       for (let i = 0; i < 9; i++) {
@@ -85,7 +84,7 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
   function handleReset() {
     setPlayerId("");
     setDate(todayString());
-    setCourseHalf("");
+    setCourseHalf("front9");
     setMode("hole");
     setHoles(EMPTY_HOLES);
     setTotalScore("");
@@ -160,7 +159,7 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
           {/* Front-9 / Back-9 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Course half <span className="text-red-500">*</span>
+              Course half
             </label>
             <div className="flex gap-1 rounded-xl bg-gray-100 p-1">
               <button
