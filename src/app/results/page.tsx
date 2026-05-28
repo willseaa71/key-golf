@@ -522,10 +522,7 @@ export default async function ResultsPage({
       <hr className="border-gray-200" />
       <section>
         <h2 className="font-semibold text-lg mb-1">Season Standings</h2>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs text-gray-400">Ranked by round average · lower is better</p>
-          <p className="text-xs text-[#006747] font-medium">Tap a player for stats →</p>
-        </div>
+        <p className="text-xs text-gray-400 mb-3">Ranked by round average · lower is better</p>
 
         <div className="rounded-xl border border-gray-200 overflow-hidden">
           <table className="w-full text-sm">
@@ -540,67 +537,97 @@ export default async function ResultsPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {leaderboard.map(({ player, rank, seasonAvgVal }) => {
-                const weekRound = weekRoundByPlayer.get(player.id) ?? null;
-                const p2025 = player.prior_averages.find((a) => a.season_year === 2025)?.average ?? null;
-                const p2024 = player.prior_averages.find((a) => a.season_year === 2024)?.average ?? null;
-                const isFocal = player.id === focusPlayerId;
-                const hasRounds = seasonAvgVal !== null;
-                const playerHref = `/results?player=${player.id}${weekNumber !== null ? `&week=${weekNumber}` : ""}`;
+              {(() => {
+                const regularRows = leaderboard.filter(({ player }) => player.sub_order === null);
+                const subRows = leaderboard
+                  .filter(({ player }) => player.sub_order !== null)
+                  .sort((a, b) => (a.player.sub_order ?? 99) - (b.player.sub_order ?? 99));
+
+                function PlayerRow({ player, rank, seasonAvgVal }: { player: typeof leaderboard[0]["player"]; rank: number | null; seasonAvgVal: number | null }) {
+                  const weekRound = weekRoundByPlayer.get(player.id) ?? null;
+                  const p2025 = player.prior_averages.find((a) => a.season_year === 2025)?.average ?? null;
+                  const p2024 = player.prior_averages.find((a) => a.season_year === 2024)?.average ?? null;
+                  const isFocal = player.id === focusPlayerId;
+                  const hasRounds = seasonAvgVal !== null;
+                  const playerHref = `/results?player=${player.id}${weekNumber !== null ? `&week=${weekNumber}` : ""}`;
+                  return (
+                    <tr
+                      key={player.id}
+                      className={`${isFocal ? "bg-[#006747]/6" : "hover:bg-gray-50"} ${!hasRounds ? "opacity-40" : ""} cursor-pointer transition-colors`}
+                    >
+                      <td className="px-3 py-2.5 text-gray-400 font-medium w-8">
+                        <div className="flex flex-col items-center leading-tight">
+                          <span>{rank !== null ? rank : "—"}</span>
+                          {(() => {
+                            if (rank === null) return null;
+                            const prior = priorRankByPlayer.get(player.id) ?? null;
+                            if (prior === null) return <span className="text-[9px] text-blue-400 font-medium">NEW</span>;
+                            const delta = prior - rank;
+                            if (delta === 0) return null;
+                            return (
+                              <span className={`text-[9px] font-bold ${delta > 0 ? "text-[#006747]" : "text-red-400"}`}>
+                                {delta > 0 ? `↑${delta}` : `↓${Math.abs(delta)}`}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <Link href={playerHref} className={isFocal ? "font-semibold text-[#006747]" : "hover:text-[#006747]"}>
+                          {player.name}
+                        </Link>
+                        {player.sub_order !== null && (
+                          <span className="ml-1.5 text-[10px] font-medium text-[#C9A84C] bg-[#C9A84C]/10 px-1 rounded">
+                            SUB {player.sub_order}
+                          </span>
+                        )}
+                        {weekRound && (
+                          <span className="ml-1.5 text-[10px] text-gray-400 bg-gray-100 px-1 rounded">
+                            W{weekNumber} · {weekRound.total_score}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-semibold">
+                        {fmt(seasonAvgVal)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-gray-500 border-l border-gray-200 hidden sm:table-cell">
+                        {fmt(p2025)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-gray-500 hidden sm:table-cell">
+                        {fmt(p2024)}
+                      </td>
+                      <td className="px-2 py-2.5">
+                        <Link href={playerHref} className="flex items-center justify-center">
+                          <ChevronRight size={16} className="text-[#006747]" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                }
+
                 return (
-                  <tr
-                    key={player.id}
-                    className={`${isFocal ? "bg-[#006747]/6" : "hover:bg-gray-50"} ${!hasRounds ? "opacity-40" : ""} cursor-pointer transition-colors`}
-                  >
-                    <td className="px-3 py-2.5 text-gray-400 font-medium w-8">
-                      <div className="flex flex-col items-center leading-tight">
-                        <span>{rank !== null ? rank : "—"}</span>
-                        {(() => {
-                          if (rank === null) return null;
-                          const prior = priorRankByPlayer.get(player.id) ?? null;
-                          if (prior === null) return <span className="text-[9px] text-blue-400 font-medium">NEW</span>;
-                          const delta = prior - rank; // positive = moved up
-                          if (delta === 0) return null;
-                          return (
-                            <span className={`text-[9px] font-bold ${delta > 0 ? "text-[#006747]" : "text-red-400"}`}>
-                              {delta > 0 ? `↑${delta}` : `↓${Math.abs(delta)}`}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <Link href={playerHref} className={isFocal ? "font-semibold text-[#006747]" : "hover:text-[#006747]"}>
-                        {player.name}
-                      </Link>
-                      {player.sub_order !== null && (
-                        <span className="ml-1.5 text-[10px] font-medium text-[#C9A84C] bg-[#C9A84C]/10 px-1 rounded">
-                          SUB {player.sub_order}
-                        </span>
-                      )}
-                      {weekRound && (
-                        <span className="ml-1.5 text-[10px] text-gray-400 bg-gray-100 px-1 rounded">
-                          W{weekNumber} · {weekRound.total_score}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-semibold">
-                      {fmt(seasonAvgVal)}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-gray-500 border-l border-gray-200 hidden sm:table-cell">
-                      {fmt(p2025)}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-gray-500 hidden sm:table-cell">
-                      {fmt(p2024)}
-                    </td>
-                    <td className="px-2 py-2.5">
-                      <Link href={playerHref} className="flex items-center justify-center">
-                        <ChevronRight size={16} className="text-[#006747]" />
-                      </Link>
-                    </td>
-                  </tr>
+                  <>
+                    {regularRows.map(({ player, rank, seasonAvgVal }) => (
+                      <PlayerRow key={player.id} player={player} rank={rank} seasonAvgVal={seasonAvgVal} />
+                    ))}
+                    {subRows.length > 0 && (
+                      <>
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className="px-3 py-1.5 text-[10px] font-semibold text-[#C9A84C] uppercase tracking-widest bg-[#C9A84C]/5 border-t border-b border-[#C9A84C]/20"
+                          >
+                            Substitutes
+                          </td>
+                        </tr>
+                        {subRows.map(({ player, seasonAvgVal }) => (
+                          <PlayerRow key={player.id} player={player} rank={null} seasonAvgVal={seasonAvgVal} />
+                        ))}
+                      </>
+                    )}
+                  </>
                 );
-              })}
+              })()}
             </tbody>
           </table>
         </div>
