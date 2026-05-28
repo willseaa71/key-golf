@@ -336,6 +336,7 @@ export default async function AchievementsPage() {
   type CalloutCard = {
     icon: ReactNode;
     title: string;
+    description: string;
     accent: "gold" | "green" | "blue" | "slate";
     earners: { name: string; detail?: string }[];
   };
@@ -378,7 +379,7 @@ export default async function AchievementsPage() {
       }
     }
     if (icarusEarners.length > 0) {
-      weeklyCallouts.push({ icon: <Sun size={18} className="text-gray-500" />, title: "Icarus", accent: "slate", earners: icarusEarners });
+      weeklyCallouts.push({ icon: <Sun size={18} className="text-gray-500" />, title: "Icarus", description: "Scored 10+ strokes above their prior season average", accent: "slate", earners: icarusEarners });
     }
 
     // -- Hungover (skip if Icarus) --
@@ -397,7 +398,7 @@ export default async function AchievementsPage() {
         }
       }
       if (hungoverEarners.length > 0) {
-        weeklyCallouts.push({ icon: <Beer size={18} className="text-gray-500" />, title: "Hungover", accent: "slate", earners: hungoverEarners });
+        weeklyCallouts.push({ icon: <Beer size={18} className="text-gray-500" />, title: "Hungover", description: "Scored 5+ strokes worse than the previous week", accent: "slate", earners: hungoverEarners });
       }
     }
 
@@ -416,7 +417,7 @@ export default async function AchievementsPage() {
         }
       }
       if (redemptionEarners.length > 0) {
-        weeklyCallouts.push({ icon: <Flag size={18} className="text-[#006747]" />, title: "Redemption Arc", accent: "green", earners: redemptionEarners });
+        weeklyCallouts.push({ icon: <Flag size={18} className="text-[#006747]" />, title: "Redemption Arc", description: "Bounced back 5+ strokes better than the previous week", accent: "green", earners: redemptionEarners });
       }
     }
 
@@ -443,7 +444,7 @@ export default async function AchievementsPage() {
       }
     }
     if (groundhogEarners.length > 0) {
-      weeklyCallouts.push({ icon: <RefreshCw size={18} className="text-blue-500" />, title: "Groundhog Day", accent: "blue", earners: groundhogEarners });
+      weeklyCallouts.push({ icon: <RefreshCw size={18} className="text-blue-500" />, title: "Groundhog Day", description: "Posted the exact same score three weeks in a row", accent: "blue", earners: groundhogEarners });
     }
 
     // -- The Undertaker (beat field avg by 5+) --
@@ -457,7 +458,7 @@ export default async function AchievementsPage() {
       }
     }
     if (undertakerEarners.length > 0) {
-      weeklyCallouts.push({ icon: <Skull size={18} className="text-[#C9A84C]" />, title: "The Undertaker", accent: "gold", earners: undertakerEarners });
+      weeklyCallouts.push({ icon: <Skull size={18} className="text-[#C9A84C]" />, title: "The Undertaker", description: "Buried the field — scored 5+ below the week's average", accent: "gold", earners: undertakerEarners });
     }
 
     // -- Last Call (lowest score among bottom-half players this week) --
@@ -469,7 +470,7 @@ export default async function AchievementsPage() {
       const lastCallEarners = bottomHalfRoundsThisWeek
         .filter((r) => r.total_score === minBH)
         .map((r) => ({ name: r.player.name, detail: String(r.total_score) }));
-      weeklyCallouts.push({ icon: <Bell size={18} className="text-gray-500" />, title: "Last Call", accent: "slate", earners: lastCallEarners });
+      weeklyCallouts.push({ icon: <Bell size={18} className="text-gray-500" />, title: "Last Call", description: "Best score among the bottom half of the standings this week", accent: "slate", earners: lastCallEarners });
     }
 
     // -- Déjà Vu (matched personal season low exactly, 2+ rounds) --
@@ -490,7 +491,7 @@ export default async function AchievementsPage() {
       }
     }
     if (dejavuEarners.length > 0) {
-      weeklyCallouts.push({ icon: <Ghost size={18} className="text-blue-500" />, title: "Déjà Vu", accent: "blue", earners: dejavuEarners });
+      weeklyCallouts.push({ icon: <Ghost size={18} className="text-blue-500" />, title: "Déjà Vu", description: "Matched their personal season low exactly", accent: "blue", earners: dejavuEarners });
     }
 
     // -- Tough Crowd (new personal best but finished last) --
@@ -511,7 +512,7 @@ export default async function AchievementsPage() {
       }
     }
     if (toughCrowdEarners.length > 0) {
-      weeklyCallouts.push({ icon: <ThumbsDown size={18} className="text-gray-500" />, title: "Tough Crowd", accent: "slate", earners: toughCrowdEarners });
+      weeklyCallouts.push({ icon: <ThumbsDown size={18} className="text-gray-500" />, title: "Tough Crowd", description: "Personal best score — but still finished last this week", accent: "slate", earners: toughCrowdEarners });
     }
 
     // -- Sleeper (first week beating 2025 avg, after 2+ prior weeks above it) --
@@ -532,7 +533,7 @@ export default async function AchievementsPage() {
         });
       }
       if (sleeperEarners.length > 0) {
-        weeklyCallouts.push({ icon: <Moon size={18} className="text-[#006747]" />, title: "Sleeper", accent: "green", earners: sleeperEarners });
+        weeklyCallouts.push({ icon: <Moon size={18} className="text-[#006747]" />, title: "Sleeper", description: "First week beating their 2025 average after 2+ weeks above it", accent: "green", earners: sleeperEarners });
       }
     }
   }
@@ -766,7 +767,7 @@ export default async function AchievementsPage() {
                 key={i}
                 icon={c.icon}
                 title={c.title}
-                description=""
+                description={c.description}
                 accent={c.accent}
                 earners={c.earners}
               />
