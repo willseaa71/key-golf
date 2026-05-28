@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { WeatherWidget } from "./results/WeatherWidget";
+import { Flag, Trophy, ClipboardList, Award, BarChart2 } from "lucide-react";
 
 export const metadata = { title: "KEY Golf" };
 
@@ -13,14 +14,14 @@ function fmt(n: number | null) {
   return n === null ? "—" : n.toFixed(1);
 }
 
-const ENTER_CARD = { href: "/enter", icon: "⛳", label: "Enter Score" } as const;
+const ENTER_CARD = { href: "/enter", icon: <Flag size={20} className="text-white" />, label: "Enter Score" };
 
 const NAV_PILLS = [
-  { href: "/results",      icon: "🏆", label: "Standings"    },
-  { href: "/scorecard",    icon: "📋", label: "Scorecard"    },
-  { href: "/achievements", icon: "🏆", label: "Trophy Case"       },
-  { href: "/stats",        icon: "📊", label: "Hole Performance" },
-] as const;
+  { href: "/results",      icon: <Trophy size={20} className="text-[#006747]" />,      label: "Standings"       },
+  { href: "/scorecard",    icon: <ClipboardList size={20} className="text-gray-600" />, label: "Scorecard"       },
+  { href: "/achievements", icon: <Award size={20} className="text-[#C9A84C]" />,        label: "Trophy Case"     },
+  { href: "/stats",        icon: <BarChart2 size={20} className="text-gray-600" />,     label: "Hole Performance" },
+];
 
 export default async function HomePage() {
   const season = await db.season.findFirst({
@@ -38,7 +39,7 @@ export default async function HomePage() {
         href={ENTER_CARD.href}
         className="col-span-2 flex items-center gap-4 rounded-xl bg-[#006747] text-white px-5 py-4 hover:bg-[#005236] transition-colors"
       >
-        <span className="text-2xl leading-none">{ENTER_CARD.icon}</span>
+        {ENTER_CARD.icon}
         <p className="font-semibold text-lg">{ENTER_CARD.label}</p>
       </Link>
 
@@ -50,7 +51,7 @@ export default async function HomePage() {
             href={card.href}
             className="flex items-center gap-4 px-4 py-4 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
           >
-            <span className="text-2xl w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100">
+            <span className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100">
               {card.icon}
             </span>
             <span className="flex-1 text-base font-semibold text-gray-900">{card.label}</span>

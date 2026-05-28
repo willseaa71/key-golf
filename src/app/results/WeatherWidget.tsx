@@ -1,35 +1,46 @@
 import { Suspense } from "react";
+import type { ReactNode } from "react";
+import {
+  Sun,
+  CloudSun,
+  Cloud,
+  CloudRain,
+  CloudLightning,
+  Wind,
+  Umbrella,
+  Snowflake,
+} from "lucide-react";
 
 const LAT = 43.0831;
 const LON = -73.7846;
 
-type WmoEntry = { label: string; icon: string };
+type WmoEntry = { label: string; icon: ReactNode };
 const WMO: Record<number, WmoEntry> = {
-  0:  { label: "Clear",          icon: "☀️" },
-  1:  { label: "Mainly Clear",   icon: "🌤️" },
-  2:  { label: "Partly Cloudy",  icon: "⛅" },
-  3:  { label: "Overcast",       icon: "☁️" },
-  45: { label: "Foggy",          icon: "🌫️" },
-  48: { label: "Icy Fog",        icon: "🌫️" },
-  51: { label: "Light Drizzle",  icon: "🌦️" },
-  53: { label: "Drizzle",        icon: "🌦️" },
-  55: { label: "Heavy Drizzle",  icon: "🌧️" },
-  61: { label: "Light Rain",     icon: "🌧️" },
-  63: { label: "Rain",           icon: "🌧️" },
-  65: { label: "Heavy Rain",     icon: "🌧️" },
-  71: { label: "Light Snow",     icon: "❄️" },
-  73: { label: "Snow",           icon: "❄️" },
-  75: { label: "Heavy Snow",     icon: "❄️" },
-  80: { label: "Showers",        icon: "🌦️" },
-  81: { label: "Showers",        icon: "🌧️" },
-  82: { label: "Heavy Showers",  icon: "🌧️" },
-  95: { label: "Thunderstorm",   icon: "⛈️" },
-  96: { label: "Thunderstorm",   icon: "⛈️" },
-  99: { label: "Thunderstorm",   icon: "⛈️" },
+  0:  { label: "Clear",          icon: <Sun size={18} className="text-amber-400" /> },
+  1:  { label: "Mainly Clear",   icon: <CloudSun size={18} className="text-gray-400" /> },
+  2:  { label: "Partly Cloudy",  icon: <CloudSun size={18} className="text-gray-400" /> },
+  3:  { label: "Overcast",       icon: <Cloud size={18} className="text-gray-400" /> },
+  45: { label: "Foggy",          icon: <Cloud size={18} className="text-gray-300" /> },
+  48: { label: "Icy Fog",        icon: <Cloud size={18} className="text-gray-300" /> },
+  51: { label: "Light Drizzle",  icon: <CloudRain size={18} className="text-blue-400" /> },
+  53: { label: "Drizzle",        icon: <CloudRain size={18} className="text-blue-400" /> },
+  55: { label: "Heavy Drizzle",  icon: <CloudRain size={18} className="text-blue-400" /> },
+  61: { label: "Light Rain",     icon: <CloudRain size={18} className="text-blue-400" /> },
+  63: { label: "Rain",           icon: <CloudRain size={18} className="text-blue-400" /> },
+  65: { label: "Heavy Rain",     icon: <CloudRain size={18} className="text-blue-400" /> },
+  71: { label: "Light Snow",     icon: <Snowflake size={18} className="text-blue-200" /> },
+  73: { label: "Snow",           icon: <Snowflake size={18} className="text-blue-200" /> },
+  75: { label: "Heavy Snow",     icon: <Snowflake size={18} className="text-blue-200" /> },
+  80: { label: "Showers",        icon: <CloudRain size={18} className="text-blue-400" /> },
+  81: { label: "Showers",        icon: <CloudRain size={18} className="text-blue-400" /> },
+  82: { label: "Heavy Showers",  icon: <CloudRain size={18} className="text-blue-400" /> },
+  95: { label: "Thunderstorm",   icon: <CloudLightning size={18} className="text-amber-500" /> },
+  96: { label: "Thunderstorm",   icon: <CloudLightning size={18} className="text-amber-500" /> },
+  99: { label: "Thunderstorm",   icon: <CloudLightning size={18} className="text-amber-500" /> },
 };
 
 function wmo(code: number): WmoEntry {
-  return WMO[code] ?? { label: "Mixed", icon: "🌥️" };
+  return WMO[code] ?? { label: "Mixed", icon: <CloudSun size={18} className="text-gray-400" /> };
 }
 
 // Next Thursday relative to today (or today if today is Thursday)
@@ -121,7 +132,7 @@ async function WeatherCard() {
       <div className="flex items-center gap-4 flex-wrap">
         {/* Condition */}
         <div className="flex items-center gap-2">
-          <span className="text-2xl leading-none">{cond.icon}</span>
+          {cond.icon}
           <span className="text-sm font-medium text-gray-800">{cond.label}</span>
         </div>
         {/* Temp */}
@@ -132,12 +143,12 @@ async function WeatherCard() {
         </div>
         {/* Wind */}
         <div className="flex items-center gap-1 text-sm text-gray-600">
-          <span>💨</span>
+          <Wind size={18} className="text-gray-400" />
           <span>{wind} mph</span>
         </div>
         {/* Rain */}
         <div className={`flex items-center gap-1 text-sm font-medium ${rainColor}`}>
-          <span>☔</span>
+          <Umbrella size={18} className="text-blue-400" />
           <span>{rain}% rain</span>
         </div>
       </div>

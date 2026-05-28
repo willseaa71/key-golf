@@ -1,7 +1,13 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { db } from "@/lib/db";
 import { holePar } from "@/lib/course";
 import { CollapsibleAchievementCard } from "./CollapsibleCard";
+import {
+  Trophy, Medal, TrendingDown, CalendarCheck, Flame, Flag,
+  Sun, Beer, RefreshCw, Skull, Bell, Ghost, ThumbsDown,
+  Moon, Dumbbell, Target, Hammer, Wind, Zap, CircleDot, CheckCircle,
+} from "lucide-react";
 
 export const metadata = { title: "Achievements — KEY Golf" };
 
@@ -24,7 +30,7 @@ function AchievementCard({
   earners,
   accent,
 }: {
-  icon: string;
+  icon: ReactNode;
   title: string;
   description: string;
   earners: { name: string; detail?: string }[];
@@ -47,7 +53,7 @@ function AchievementCard({
   return (
     <div className={`rounded-xl border p-4 ${border}`}>
       <div className="flex items-start gap-3">
-        <span className={`text-xl w-9 h-9 flex items-center justify-center rounded-lg shrink-0 ${iconBg}`}>
+        <span className={`w-9 h-9 flex items-center justify-center rounded-lg shrink-0 ${iconBg}`}>
           {icon}
         </span>
         <div className="min-w-0">
@@ -69,11 +75,11 @@ function AchievementCard({
   );
 }
 
-function LockedCard({ icon, title, description }: { icon: string; title: string; description: string }) {
+function LockedCard({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
   return (
     <div className="rounded-xl border border-gray-100 bg-gray-50/30 p-4 opacity-50">
       <div className="flex items-start gap-3">
-        <span className="text-xl w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-gray-400 shrink-0 grayscale">
+        <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-gray-400 shrink-0 grayscale">
           {icon}
         </span>
         <div>
@@ -332,7 +338,7 @@ export default async function AchievementsPage() {
   // ── Weekly Callouts ──────────────────────────────────────────────────────
 
   type CalloutCard = {
-    icon: string;
+    icon: ReactNode;
     title: string;
     accent: "gold" | "green" | "blue" | "slate";
     earners: { name: string; detail?: string }[];
@@ -376,7 +382,7 @@ export default async function AchievementsPage() {
       }
     }
     if (icarusEarners.length > 0) {
-      weeklyCallouts.push({ icon: "🌞", title: "Icarus", accent: "slate", earners: icarusEarners });
+      weeklyCallouts.push({ icon: <Sun size={18} className="text-gray-500" />, title: "Icarus", accent: "slate", earners: icarusEarners });
     }
 
     // -- Hungover (skip if Icarus) --
@@ -395,7 +401,7 @@ export default async function AchievementsPage() {
         }
       }
       if (hungoverEarners.length > 0) {
-        weeklyCallouts.push({ icon: "🍺", title: "Hungover", accent: "slate", earners: hungoverEarners });
+        weeklyCallouts.push({ icon: <Beer size={18} className="text-gray-500" />, title: "Hungover", accent: "slate", earners: hungoverEarners });
       }
     }
 
@@ -414,7 +420,7 @@ export default async function AchievementsPage() {
         }
       }
       if (redemptionEarners.length > 0) {
-        weeklyCallouts.push({ icon: "⛳", title: "Redemption Arc", accent: "green", earners: redemptionEarners });
+        weeklyCallouts.push({ icon: <Flag size={18} className="text-[#006747]" />, title: "Redemption Arc", accent: "green", earners: redemptionEarners });
       }
     }
 
@@ -441,7 +447,7 @@ export default async function AchievementsPage() {
       }
     }
     if (groundhogEarners.length > 0) {
-      weeklyCallouts.push({ icon: "🔄", title: "Groundhog Day", accent: "blue", earners: groundhogEarners });
+      weeklyCallouts.push({ icon: <RefreshCw size={18} className="text-blue-500" />, title: "Groundhog Day", accent: "blue", earners: groundhogEarners });
     }
 
     // -- The Undertaker (beat field avg by 5+) --
@@ -455,7 +461,7 @@ export default async function AchievementsPage() {
       }
     }
     if (undertakerEarners.length > 0) {
-      weeklyCallouts.push({ icon: "💀", title: "The Undertaker", accent: "gold", earners: undertakerEarners });
+      weeklyCallouts.push({ icon: <Skull size={18} className="text-[#C9A84C]" />, title: "The Undertaker", accent: "gold", earners: undertakerEarners });
     }
 
     // -- Last Call (lowest score among bottom-half players this week) --
@@ -467,7 +473,7 @@ export default async function AchievementsPage() {
       const lastCallEarners = bottomHalfRoundsThisWeek
         .filter((r) => r.total_score === minBH)
         .map((r) => ({ name: r.player.name, detail: String(r.total_score) }));
-      weeklyCallouts.push({ icon: "🔔", title: "Last Call", accent: "slate", earners: lastCallEarners });
+      weeklyCallouts.push({ icon: <Bell size={18} className="text-gray-500" />, title: "Last Call", accent: "slate", earners: lastCallEarners });
     }
 
     // -- Déjà Vu (matched personal season low exactly, 2+ rounds) --
@@ -488,7 +494,7 @@ export default async function AchievementsPage() {
       }
     }
     if (dejavuEarners.length > 0) {
-      weeklyCallouts.push({ icon: "👻", title: "Déjà Vu", accent: "blue", earners: dejavuEarners });
+      weeklyCallouts.push({ icon: <Ghost size={18} className="text-blue-500" />, title: "Déjà Vu", accent: "blue", earners: dejavuEarners });
     }
 
     // -- Tough Crowd (new personal best but finished last) --
@@ -509,7 +515,7 @@ export default async function AchievementsPage() {
       }
     }
     if (toughCrowdEarners.length > 0) {
-      weeklyCallouts.push({ icon: "😤", title: "Tough Crowd", accent: "slate", earners: toughCrowdEarners });
+      weeklyCallouts.push({ icon: <ThumbsDown size={18} className="text-gray-500" />, title: "Tough Crowd", accent: "slate", earners: toughCrowdEarners });
     }
 
     // -- Sleeper (first week beating 2025 avg, after 2+ prior weeks above it) --
@@ -530,7 +536,7 @@ export default async function AchievementsPage() {
         });
       }
       if (sleeperEarners.length > 0) {
-        weeklyCallouts.push({ icon: "😴", title: "Sleeper", accent: "green", earners: sleeperEarners });
+        weeklyCallouts.push({ icon: <Moon size={18} className="text-[#006747]" />, title: "Sleeper", accent: "green", earners: sleeperEarners });
       }
     }
   }
@@ -593,8 +599,8 @@ export default async function AchievementsPage() {
       {/* ── Season Low Hero ── */}
       <div className="rounded-2xl border-2 border-[#C9A84C]/50 bg-gradient-to-br from-[#C9A84C]/10 to-[#C9A84C]/5 p-5">
         <div className="flex items-start gap-4">
-          <div className="text-3xl w-14 h-14 flex items-center justify-center rounded-xl bg-[#C9A84C]/20">
-            🏆
+          <div className="w-14 h-14 flex items-center justify-center rounded-xl bg-[#C9A84C]/20">
+            <Trophy size={24} className="text-[#C9A84C]" />
           </div>
           <div>
             <p className="text-xs font-semibold text-[#C9A84C] uppercase tracking-widest mb-0.5">Season Low</p>
@@ -624,7 +630,7 @@ export default async function AchievementsPage() {
             return (
               <div key={week} className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3">
                 <span className="text-sm font-bold text-[#C9A84C] w-8">W{week}</span>
-                <span className="text-xl">🥇</span>
+                <Medal size={18} className="text-[#C9A84C]" />
                 <div className="flex-1 min-w-0">
                   <span className="text-sm font-medium text-gray-900">
                     {w.players.map((p) => p.player.name).join(" & ")}
@@ -652,7 +658,7 @@ export default async function AchievementsPage() {
         {perfectAttendance.length > 0 && (
           perfectAttendance.length > 3 ? (
             <CollapsibleAchievementCard
-              icon="📅"
+              icon={<CalendarCheck size={18} className="text-blue-500" />}
               title="Perfect Attendance"
               description={`Played every week so far (${weeksPlayed} of 13)`}
               accent="blue"
@@ -661,7 +667,7 @@ export default async function AchievementsPage() {
             />
           ) : (
             <AchievementCard
-              icon="📅"
+              icon={<CalendarCheck size={18} className="text-blue-500" />}
               title="Perfect Attendance"
               description={`Played every week so far (${weeksPlayed} of 13)`}
               accent="blue"
@@ -694,7 +700,7 @@ export default async function AchievementsPage() {
           <div className="space-y-3">
             {holeInOne && (
               <AchievementCard
-                icon="🎱"
+                icon={<CircleDot size={18} className="text-[#C9A84C]" />}
                 title="Hole in One"
                 description="Aced a hole"
                 accent="gold"
@@ -703,7 +709,7 @@ export default async function AchievementsPage() {
             )}
             {eagle && (
               <AchievementCard
-                icon="🦅"
+                icon={<Zap size={18} className="text-[#C9A84C]" />}
                 title="Eagle"
                 description="2 under par on a single hole"
                 accent="gold"
@@ -712,7 +718,7 @@ export default async function AchievementsPage() {
             )}
             {birdieMachine && (
               <AchievementCard
-                icon="🐦"
+                icon={<Wind size={18} className="text-[#006747]" />}
                 title="Birdie Machine"
                 description="Most birdies in a single round"
                 accent="green"
@@ -721,7 +727,7 @@ export default async function AchievementsPage() {
             )}
             {cleanCard && (
               <AchievementCard
-                icon="✅"
+                icon={<CheckCircle size={18} className="text-[#006747]" />}
                 title="Clean Card"
                 description="Every hole at or under par"
                 accent="green"
@@ -784,7 +790,7 @@ export default async function AchievementsPage() {
           <div className="space-y-3">
             {ironManEarners.length > 0 && (
               <AchievementCard
-                icon="🏋️"
+                icon={<Dumbbell size={18} className="text-gray-400" />}
                 title="Iron Man"
                 description="Perfect attendance — played all 13 weeks"
                 accent="gold"
@@ -793,7 +799,7 @@ export default async function AchievementsPage() {
             )}
             {mostConsistentEarner && (
               <AchievementCard
-                icon="🎯"
+                icon={<Target size={18} className="text-gray-400" />}
                 title="Most Consistent"
                 description="Tightest score range across the full season"
                 accent="blue"
@@ -802,7 +808,7 @@ export default async function AchievementsPage() {
             )}
             {grinderEarner && (
               <AchievementCard
-                icon="⛏️"
+                icon={<Hammer size={18} className="text-gray-400" />}
                 title="The Grinder"
                 description="Most rounds played without winning a week"
                 accent="slate"
@@ -811,7 +817,7 @@ export default async function AchievementsPage() {
             )}
             {mostImproved.length > 0 && (
               <AchievementCard
-                icon="📈"
+                icon={<TrendingDown size={18} className="text-[#006747]" />}
                 title="Most Improved"
                 description="Biggest drop in season avg vs 2025"
                 accent="green"
@@ -825,22 +831,22 @@ export default async function AchievementsPage() {
         ) : (
           <div className="space-y-3">
             <LockedCard
-              icon="🏋️"
+              icon={<Dumbbell size={18} className="text-gray-400" />}
               title="Iron Man"
               description="Perfect attendance all 13 weeks"
             />
             <LockedCard
-              icon="🎯"
+              icon={<Target size={18} className="text-gray-400" />}
               title="Most Consistent"
               description="Tightest score range across the full season"
             />
             <LockedCard
-              icon="⛏️"
+              icon={<Hammer size={18} className="text-gray-400" />}
               title="The Grinder"
               description="Most rounds played without winning a week"
             />
             <LockedCard
-              icon="📈"
+              icon={<TrendingDown size={18} className="text-[#006747]" />}
               title="Most Improved"
               description="Biggest drop in season avg vs 2025"
             />
@@ -856,7 +862,7 @@ export default async function AchievementsPage() {
           </h2>
           <div className="space-y-3">
             <LockedCard
-              icon="🔥"
+              icon={<Flame size={18} className="text-amber-500" />}
               title="Hot Streak"
               description="Beat your running season avg 3 weeks in a row"
             />

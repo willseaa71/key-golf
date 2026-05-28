@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 
 export function CollapsibleAchievementCard({
   icon,
@@ -10,7 +11,7 @@ export function CollapsibleAchievementCard({
   accent,
   collapseAfter,
 }: {
-  icon: string;
+  icon: ReactNode;
   title: string;
   description: string;
   earners: { name: string; detail?: string }[];
@@ -39,7 +40,7 @@ export function CollapsibleAchievementCard({
   return (
     <div className={`rounded-xl border p-4 ${border}`}>
       <div className="flex items-start gap-3">
-        <span className={`text-xl w-9 h-9 flex items-center justify-center rounded-lg shrink-0 ${iconBg}`}>
+        <span className={`w-9 h-9 flex items-center justify-center rounded-lg shrink-0 ${iconBg}`}>
           {icon}
         </span>
         <div className="min-w-0">
