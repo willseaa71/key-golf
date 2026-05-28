@@ -878,6 +878,12 @@ export default async function AchievementsPage() {
         >
           Scorecard
         </Link>
+        <Link
+          href="/"
+          className="flex-1 text-center py-3 rounded-xl border border-gray-300 text-sm text-gray-600 font-medium hover:bg-gray-50"
+        >
+          Home
+        </Link>
       </div>
     </main>
   );

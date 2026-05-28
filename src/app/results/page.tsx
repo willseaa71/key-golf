@@ -344,20 +344,6 @@ export default async function ResultsPage({
             {weekNumber !== null ? `Week ${weekNumber} Results` : "Results"}
           </h1>
           {weekLabel && <p className="text-sm text-gray-500 mt-0.5">{weekLabel}</p>}
-          <div className="flex gap-3 mt-2">
-            <Link
-              href="/scorecard"
-              className="text-xs font-medium text-[#006747] hover:underline"
-            >
-              Season scorecard →
-            </Link>
-            <Link
-              href="/achievements"
-              className="text-xs font-medium text-[#C9A84C] hover:underline"
-            >
-              Achievements →
-            </Link>
-          </div>
         </div>
         <div className="pt-1">
           <WeekPicker
