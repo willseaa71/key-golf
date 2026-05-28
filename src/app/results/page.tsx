@@ -5,7 +5,6 @@ import { SeasonChart } from "./SeasonChart";
 import { HoleScorecard } from "./HoleScorecard";
 import { HoleProfileChart } from "./HoleProfileChart";
 import { WeekPicker } from "./WeekPicker";
-import { WeatherWidget } from "./WeatherWidget";
 
 export const metadata = { title: "Results — KEY Golf" };
 
@@ -354,15 +353,9 @@ export default async function ResultsPage({
         </div>
       </div>
 
-      {/* Weather */}
-      <WeatherWidget />
-
       {/* Field stats */}
       {fieldStats && (
         <>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
-            Week {weekNumber} · {fieldStats.count} Players
-          </p>
           <div className="rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-4">
             <div className="flex gap-6 flex-wrap">
               <div className="flex flex-col">
@@ -525,6 +518,7 @@ export default async function ResultsPage({
       )}
 
       {/* ── Leaderboard ── */}
+      <hr className="border-gray-200" />
       <section>
         <h2 className="font-semibold text-lg mb-1">Season Standings</h2>
         <p className="text-xs text-gray-400 mt-0.5 mb-3">Ranked by round average · lower is better</p>
