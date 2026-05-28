@@ -519,7 +519,7 @@ export default async function ResultsPage({
       )}
 
       {/* ── Leaderboard ── */}
-      <hr className="border-gray-200" />
+      <hr className="border-[#006747]" />
       <section>
         <h2 className="font-semibold text-lg mb-1">Season Standings</h2>
         <p className="text-xs text-gray-400 mb-3">Ranked by round average · lower is better</p>
