@@ -196,14 +196,14 @@ export default async function HistoryPage() {
           Rankings history will build as more weeks are played.
         </div>
       ) : (
-        <div className="overflow-x-auto -mx-4 px-4 touch-pan-x">
+        <div className="overflow-x-auto -mx-4">
           <div className="min-w-[700px]">
           <svg
             viewBox={`0 0 ${svgW} ${svgH}`}
             width={svgW}
             height={svgH}
             className="block min-w-full"
-            style={{ minWidth: svgW }}
+            style={{ minWidth: svgW, pointerEvents: "none" }}
             aria-label="Bump chart of season rankings by week"
           >
             {/* Horizontal gridlines */}
