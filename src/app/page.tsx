@@ -18,8 +18,8 @@ const ENTER_CARD = { href: "/enter", icon: "⛳", label: "Enter Score" } as cons
 const NAV_PILLS = [
   { href: "/results",      icon: "🏆", label: "Standings"    },
   { href: "/scorecard",    icon: "📋", label: "Scorecard"    },
-  { href: "/achievements", icon: "🥇", label: "Achievements" },
-  { href: "/stats",        icon: "📊", label: "Stats"        },
+  { href: "/achievements", icon: "🏆", label: "Trophy Case"       },
+  { href: "/stats",        icon: "📊", label: "Hole Performance" },
 ] as const;
 
 export default async function HomePage() {

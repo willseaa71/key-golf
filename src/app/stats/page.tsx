@@ -8,16 +8,6 @@ function fmt(n: number, decimals = 1) {
   return n.toFixed(decimals);
 }
 
-function signedFmt(n: number) {
-  if (Math.abs(n) < 0.05) return "E";
-  return (n > 0 ? "+" : "") + n.toFixed(2);
-}
-
-// Bar chart constants
-const BAR_MAX_STROKES = 2; // ±2 strokes = max bar extent
-const BAR_SCALE = 24; // px per stroke
-const BAR_CENTER = 60;  // px from left edge to par baseline
-const BAR_TOTAL_W = 140; // total SVG width for the bar
 
 type HoleStat = {
   holeNumber: number; // real course hole number (1–18)
@@ -33,95 +23,59 @@ type HoleStat = {
   doublesPlus: number;
 };
 
-function DiffBar({ avgVsPar }: { avgVsPar: number }) {
-  const clamped = Math.max(-BAR_MAX_STROKES, Math.min(BAR_MAX_STROKES, avgVsPar));
-  const barPx = Math.abs(clamped) * BAR_SCALE;
-  const overPar = clamped >= 0;
-
-  // baseline x in SVG coords
-  const baseX = BAR_CENTER;
-  const barX = overPar ? baseX : baseX - barPx;
-  const barColor = overPar ? "#ef4444" : "#006747";
-
-  return (
-    <svg
-      width={BAR_TOTAL_W}
-      height={20}
-      viewBox={`0 0 ${BAR_TOTAL_W} 20`}
-      aria-hidden="true"
-      className="flex-shrink-0"
-    >
-      {/* Track */}
-      <rect x={0} y={8} width={BAR_TOTAL_W} height={4} rx={2} fill="#f3f4f6" />
-      {/* Bar */}
-      {barPx > 0 && (
-        <rect x={barX} y={6} width={barPx} height={8} rx={2} fill={barColor} opacity={0.8} />
-      )}
-      {/* Baseline */}
-      <rect x={baseX - 1} y={4} width={2} height={12} rx={1} fill="#9ca3af" />
-    </svg>
-  );
-}
-
-function HoleRow({ stat, rankLabel }: { stat: HoleStat; rankLabel: string }) {
-  const diffPositive = stat.avgVsPar > 0;
-  const diffNeutral = Math.abs(stat.avgVsPar) < 0.05;
-  const diffClass = diffNeutral
-    ? "bg-gray-100 text-gray-600"
-    : diffPositive
-    ? "bg-red-100 text-red-600"
-    : "bg-[#006747]/10 text-[#006747]";
-
-  const holeLabel = `H${stat.holeNumber}`;
-
-  // Score breakdown as % of rounds
+function HoleRow({ stat }: { stat: HoleStat }) {
   const total = stat.count;
-  const pct = (n: number) => Math.round((n / total) * 100);
+
+  // Percentages that always sum to 100 (remainder absorbed by par)
+  const birdieOrBetterPct = Math.round((stat.birdies / total) * 100);
+  const bogeyPct = Math.round((stat.bogeys / total) * 100);
+  const doublePlusPct = Math.round((stat.doublesPlus / total) * 100);
+  const parPct = 100 - birdieOrBetterPct - bogeyPct - doublePlusPct;
+
+  const avgColor =
+    stat.avgVsPar <= 0 ? "#006747" : stat.avgVsPar > 1 ? "#EF4444" : "#D97706";
 
   return (
-    <div className="flex flex-col py-3 border-b border-gray-100 last:border-0 gap-2">
-      {/* Top row: rank · hole · bar · avg */}
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-bold text-gray-400 w-6 text-right shrink-0">{rankLabel}</span>
-
-        <div className="w-16 shrink-0">
-          <span className="text-sm font-semibold text-gray-900">{holeLabel}</span>
-          <span className="ml-1 text-xs text-gray-400">par {stat.par}</span>
+    <div className="rounded-xl border border-gray-100 bg-white p-4 space-y-2">
+      {/* Row 1: Hole number, par, avg score */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-baseline gap-2">
+          <span className="text-lg font-bold text-gray-900">H{stat.holeNumber}</span>
+          <span className="text-xs text-gray-400">par {stat.par}</span>
         </div>
-
-        <DiffBar avgVsPar={stat.avgVsPar} />
-
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-sm font-semibold text-gray-900">{fmt(stat.avgStrokes)}</span>
-          <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${diffClass}`}>
-            {signedFmt(stat.avgVsPar)}
-          </span>
-        </div>
+        <span className="text-lg font-bold" style={{ color: avgColor }}>
+          {stat.avgVsPar > 0
+            ? `+${stat.avgVsPar.toFixed(2)}`
+            : stat.avgVsPar.toFixed(2)}
+        </span>
       </div>
 
-      {/* Score breakdown row */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-9 text-[11px]">
-        <span className="text-gray-400 shrink-0">{total} rounds ·</span>
-        {stat.birdies > 0 && (
-          <span className="text-[#006747] font-medium whitespace-nowrap">
-            🐦 {stat.birdies} birdie{stat.birdies !== 1 ? "s" : ""} ({pct(stat.birdies)}%)
+      {/* Row 2: Stacked distribution bar */}
+      <div className="flex rounded-full overflow-hidden h-4 w-full">
+        {birdieOrBetterPct > 0 && (
+          <div className="h-full bg-[#006747]" style={{ width: `${birdieOrBetterPct}%` }} />
+        )}
+        {parPct > 0 && (
+          <div className="h-full bg-gray-200" style={{ width: `${parPct}%` }} />
+        )}
+        {bogeyPct > 0 && (
+          <div className="h-full bg-amber-400" style={{ width: `${bogeyPct}%` }} />
+        )}
+        {doublePlusPct > 0 && (
+          <div className="h-full bg-red-400" style={{ width: `${doublePlusPct}%` }} />
+        )}
+      </div>
+
+      {/* Row 3: Legend with percentages */}
+      <div className="flex gap-3 flex-wrap">
+        {birdieOrBetterPct > 0 && (
+          <span className="text-xs text-[#006747] font-medium">
+            🐦 Birdie+ {birdieOrBetterPct}%
           </span>
         )}
-        {stat.pars > 0 && (
-          <span className="text-gray-500 font-medium whitespace-nowrap">
-            {stat.pars} par ({pct(stat.pars)}%)
-          </span>
-        )}
-        {stat.bogeys > 0 && (
-          <span className="text-red-500 font-medium whitespace-nowrap">
-            {stat.bogeys} bogey{stat.bogeys !== 1 ? "s" : ""} ({pct(stat.bogeys)}%)
-          </span>
-        )}
-        {stat.doublesPlus > 0 && (
-          <span className="text-red-700 font-medium whitespace-nowrap">
-            {stat.doublesPlus} dbl+ ({pct(stat.doublesPlus)}%)
-          </span>
-        )}
+        <span className="text-xs text-gray-400">Par {parPct}%</span>
+        <span className="text-xs text-amber-500">Bogey {bogeyPct}%</span>
+        <span className="text-xs text-red-400">Dbl+ {doublePlusPct}%</span>
       </div>
     </div>
   );
@@ -282,11 +236,11 @@ export default async function StatsPage() {
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
               Front 9 — hardest to easiest
             </h2>
-            <div className="rounded-xl border border-gray-200 px-4 py-1">
+            <div className="space-y-3">
               {stats
                 .filter((s) => s.courseHalf === "front9")
-                .map((stat, i) => (
-                  <HoleRow key={`${stat.courseHalf}:${stat.storedHoleNumber}`} stat={stat} rankLabel={`#${i + 1}`} />
+                .map((stat) => (
+                  <HoleRow key={`${stat.courseHalf}:${stat.storedHoleNumber}`} stat={stat} />
                 ))}
             </div>
           </section>
@@ -296,11 +250,11 @@ export default async function StatsPage() {
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
               Back 9 — hardest to easiest
             </h2>
-            <div className="rounded-xl border border-gray-200 px-4 py-1">
+            <div className="space-y-3">
               {stats
                 .filter((s) => s.courseHalf === "back9")
-                .map((stat, i) => (
-                  <HoleRow key={`${stat.courseHalf}:${stat.storedHoleNumber}`} stat={stat} rankLabel={`#${i + 1}`} />
+                .map((stat) => (
+                  <HoleRow key={`${stat.courseHalf}:${stat.storedHoleNumber}`} stat={stat} />
                 ))}
             </div>
           </section>
@@ -310,19 +264,13 @@ export default async function StatsPage() {
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
             {singleHalf} — hardest to easiest
           </h2>
-          <div className="rounded-xl border border-gray-200 px-4 py-1">
-            {stats.map((stat, i) => (
-              <HoleRow key={`${stat.courseHalf}:${stat.storedHoleNumber}`} stat={stat} rankLabel={`#${i + 1}`} />
+          <div className="space-y-3">
+            {stats.map((stat) => (
+              <HoleRow key={`${stat.courseHalf}:${stat.storedHoleNumber}`} stat={stat} />
             ))}
           </div>
         </section>
       )}
-
-      {/* Legend */}
-      <div className="text-xs text-gray-400 space-y-1">
-        <p>Bar extends right (red) for over-par, left (green) for under-par. Scale: ±{BAR_MAX_STROKES} strokes.</p>
-        <p>{roundCount} round{roundCount !== 1 ? "s" : ""} with hole data this season.</p>
-      </div>
 
       {/* Nav */}
       <div className="flex gap-3 pt-2">
