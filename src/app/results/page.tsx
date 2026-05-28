@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { holePar } from "@/lib/course";
 import { SeasonChart } from "./SeasonChart";
 import { HoleScorecard } from "./HoleScorecard";
 import { HoleProfileChart } from "./HoleProfileChart";
-import { PlayerPicker } from "./PlayerPicker";
 import { WeekPicker } from "./WeekPicker";
 import { WeatherWidget } from "./WeatherWidget";
 
@@ -228,6 +228,48 @@ export default async function ResultsPage({
     return { count: scores.length, fieldAvg, low, high, lowPlayer: lowRound.player.name, beatAvg };
   })() : null;
 
+  // Hole difficulty strip — needs ≥3 players with full hole scores this week
+  const holeDifficultyRounds = weekRounds.filter(
+    (r) => r.has_hole_scores && r.hole_scores.length === 9
+  );
+  const holeDifficulty: Array<{
+    holeNum: number;
+    avgVsPar: number;
+    rank: number;
+    bg: string;
+    fg: string;
+  }> | null =
+    holeDifficultyRounds.length >= 3
+      ? (() => {
+          const accum: Record<number, { sum: number; count: number }> = {};
+          for (const round of holeDifficultyRounds) {
+            for (const hs of round.hole_scores) {
+              const par = holePar(hs.hole_number, round.course_half);
+              if (!accum[hs.hole_number]) accum[hs.hole_number] = { sum: 0, count: 0 };
+              accum[hs.hole_number].sum += hs.strokes - par;
+              accum[hs.hole_number].count++;
+            }
+          }
+          const holeNums = Object.keys(accum).map(Number).sort((a, b) => a - b);
+          const withAvg = holeNums.map((h) => ({
+            holeNum: h,
+            avgVsPar: accum[h].sum / accum[h].count,
+          }));
+          // Rank ascending: rank 1 = easiest (lowest avgVsPar), rank 9 = hardest
+          const sorted = [...withAvg].sort((a, b) => a.avgVsPar - b.avgVsPar);
+          const rankMap = new Map(sorted.map((h, i) => [h.holeNum, i + 1]));
+          return withAvg.map(({ holeNum, avgVsPar }) => {
+            const rank = rankMap.get(holeNum)!;
+            let bg = "#E5E7EB";
+            let fg = "#6B7280";
+            if (rank === 1) { bg = "#C9A84C"; fg = "white"; }
+            else if (rank <= 3) { bg = "#006747"; fg = "white"; }
+            else if (rank >= 8) { bg = "#EF4444"; fg = "white"; }
+            return { holeNum, avgVsPar, rank, bg, fg };
+          });
+        })()
+      : null;
+
   // Leaderboard: sort by season avg asc, tiebreak by prior week score asc, no-rounds last
   const leaderboardSorted = [...allPlayers].sort((a, b) => {
     const aAvg = avg(seasonStatsByPlayer.get(a.id)?.rounds ?? []);
@@ -331,41 +373,51 @@ export default async function ResultsPage({
 
       {/* Field stats */}
       {fieldStats && (
-        <div className="rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
-            Week {weekNumber} · {fieldStats.count} players
+        <>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
+            Week {weekNumber} · {fieldStats.count} Players
           </p>
-          <div className="flex gap-4 flex-wrap">
-            <div className="flex flex-col">
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest">Field avg</span>
-              <span className="text-sm font-semibold">{fieldStats.fieldAvg.toFixed(1)}</span>
+          <div className="rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-4">
+            <div className="flex gap-6 flex-wrap">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest">Field avg</span>
+                <span className="text-2xl font-bold">{fieldStats.fieldAvg.toFixed(1)}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest">Low</span>
+                <span className="text-2xl font-bold text-[#006747]">
+                  {fieldStats.low}{" "}
+                  <span className="text-gray-400 text-sm font-normal">{fieldStats.lowPlayer}</span>
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest">Beat avg</span>
+                <span className="text-2xl font-bold">{fieldStats.beatAvg} of {fieldStats.count}</span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest">Low</span>
-              <span className="text-sm text-[#006747] font-bold">
-                {fieldStats.low}{" "}
-                <span className="text-gray-400 text-xs font-normal">{fieldStats.lowPlayer}</span>
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest">Beat avg</span>
-              <span className="text-sm font-semibold">{fieldStats.beatAvg} of {fieldStats.count}</span>
-            </div>
+            {holeDifficulty && (
+              <div className="border-t border-gray-100 mt-4 pt-4">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
+                  Hole difficulty
+                </p>
+                <div className="flex gap-1">
+                  {holeDifficulty.map(({ holeNum, bg, fg }) => (
+                    <div
+                      key={holeNum}
+                      className="flex-1 flex flex-col items-center rounded py-1.5"
+                      style={{ backgroundColor: bg }}
+                    >
+                      <span className="text-[9px] font-bold" style={{ color: fg }}>
+                        H{holeNum}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        </>
       )}
-
-      {/* Player selector */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          View player
-        </label>
-        <PlayerPicker
-          players={allPlayers.map((p) => ({ id: p.id, name: p.name, sub_order: p.sub_order }))}
-          currentPlayerId={focusPlayerId}
-          weekNumber={weekNumber}
-        />
-      </div>
 
       {/* ── Focal player analysis ── */}
       {focal && focal.thisRound && (
@@ -475,7 +527,8 @@ export default async function ResultsPage({
 
       {/* ── Leaderboard ── */}
       <section>
-        <h2 className="font-semibold text-lg mb-3">Season Standings</h2>
+        <h2 className="font-semibold text-lg mb-1">Season Standings</h2>
+        <p className="text-xs text-gray-400 mt-0.5 mb-3">Ranked by round average · lower is better</p>
 
         <div className="rounded-xl border border-gray-200 overflow-hidden">
           <table className="w-full text-sm">
@@ -483,9 +536,10 @@ export default async function ResultsPage({
               <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
                 <th className="text-left px-3 py-2">#</th>
                 <th className="text-left px-3 py-2">Player</th>
-                <th className="text-right px-3 py-2">Avg</th>
-                <th className="text-right px-3 py-2 hidden sm:table-cell">'25</th>
+                <th className="text-right px-3 py-2">2026</th>
+                <th className="text-right px-3 py-2 border-l border-gray-200 hidden sm:table-cell">'25</th>
                 <th className="text-right px-3 py-2 hidden sm:table-cell">'24</th>
+                <th className="w-6" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -499,7 +553,7 @@ export default async function ResultsPage({
                 return (
                   <tr
                     key={player.id}
-                    className={`${isFocal ? "bg-[#006747]/6" : "hover:bg-gray-50"} ${!hasRounds ? "opacity-40" : ""}`}
+                    className={`${isFocal ? "bg-[#006747]/6" : "hover:bg-gray-50"} ${!hasRounds ? "opacity-40" : ""} cursor-pointer transition-colors`}
                   >
                     <td className="px-3 py-2.5 text-gray-400 font-medium w-8">
                       <div className="flex flex-col items-center leading-tight">
@@ -536,11 +590,14 @@ export default async function ResultsPage({
                     <td className="px-3 py-2.5 text-right font-semibold">
                       {fmt(seasonAvgVal)}
                     </td>
-                    <td className="px-3 py-2.5 text-right text-gray-500 hidden sm:table-cell">
+                    <td className="px-3 py-2.5 text-right text-gray-500 border-l border-gray-200 hidden sm:table-cell">
                       {fmt(p2025)}
                     </td>
                     <td className="px-3 py-2.5 text-right text-gray-500 hidden sm:table-cell">
                       {fmt(p2024)}
+                    </td>
+                    <td className="px-2 py-2.5 text-gray-300 text-lg">
+                      <Link href={playerHref}>›</Link>
                     </td>
                   </tr>
                 );
@@ -549,7 +606,7 @@ export default async function ResultsPage({
           </table>
         </div>
         <p className="text-xs text-gray-400 mt-2 text-right">
-          Avg = season average &nbsp;·&nbsp; W# = this week's score
+          2026 = season average &nbsp;·&nbsp; W# = this week's score
         </p>
       </section>
 
