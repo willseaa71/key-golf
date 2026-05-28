@@ -33,7 +33,7 @@ export function HoleScorecard({ holes, courseHalf, holeAvgs, total }: HoleScorec
         {/* ── Header row: hole numbers ── */}
         <thead>
           <tr>
-            <th className="text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide border border-gray-200 px-1 py-1 bg-gray-50 whitespace-nowrap">
+            <th className="text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide border border-gray-200 px-1 py-1 bg-gray-50 whitespace-nowrap w-14">
               HOLE
             </th>
             {sorted.map((h) => (
