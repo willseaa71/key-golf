@@ -1,5 +1,5 @@
 // Server Component — no "use client" needed
-import { holePar, halfPar, fmtVsPar } from "@/lib/course";
+import { holePar } from "@/lib/course";
 
 type HoleScorecardProps = {
   holes: { hole_number: number; strokes: number }[];
@@ -22,13 +22,11 @@ export function HoleScorecard({ holes, courseHalf, holeAvgs, total }: HoleScorec
   const offset  = isBack9 ? 9 : 0;
   const sorted  = [...holes].sort((a, b) => a.hole_number - b.hole_number);
   const hasAvgs = Object.keys(holeAvgs).length > 0;
-  const parTotal = halfPar(courseHalf);
-  const totalDiff = total - parTotal;
 
-  // Shared cell size classes
-  const cellW   = "w-9 min-w-[2.25rem]";
+  // Shared cell size classes — w-7 (28px) keeps the table within ~290px total
+  const cellW   = "w-7 min-w-0";
   const thBase  = `text-center text-[10px] font-medium text-gray-500 border border-gray-200 px-0 py-1 ${cellW}`;
-  const tdBase  = `text-center text-sm border border-gray-200 px-0 py-1.5 ${cellW}`;
+  const tdBase  = `text-center text-xs border border-gray-200 px-0 py-1.5 ${cellW}`;
 
   return (
     <div className="overflow-x-auto">
@@ -36,7 +34,7 @@ export function HoleScorecard({ holes, courseHalf, holeAvgs, total }: HoleScorec
         {/* ── Header row: hole numbers ── */}
         <thead>
           <tr>
-            <th className="text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide border border-gray-200 px-2 py-1 bg-gray-50 whitespace-nowrap">
+            <th className="text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide border border-gray-200 px-1 py-1 bg-gray-50 whitespace-nowrap">
               HOLE
             </th>
             {sorted.map((h) => (
@@ -44,14 +42,13 @@ export function HoleScorecard({ holes, courseHalf, holeAvgs, total }: HoleScorec
                 H{h.hole_number + offset}
               </th>
             ))}
-            <th className={`${thBase} bg-gray-50 uppercase tracking-wide`}>OUT</th>
           </tr>
         </thead>
 
         <tbody>
           {/* ── Par row ── */}
           <tr>
-            <td className="text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide border border-gray-200 px-2 py-1 bg-gray-50/60 whitespace-nowrap">
+            <td className="text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide border border-gray-200 px-1 py-1 bg-gray-50/60 whitespace-nowrap">
               PAR
             </td>
             {sorted.map((h) => {
@@ -62,12 +59,11 @@ export function HoleScorecard({ holes, courseHalf, holeAvgs, total }: HoleScorec
                 </td>
               );
             })}
-            <td className={`${tdBase} text-gray-500 bg-gray-50/60 font-medium`}>{parTotal}</td>
           </tr>
 
           {/* ── Score row — colored vs par ── */}
           <tr>
-            <td className="text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide border border-gray-200 px-2 py-1.5 whitespace-nowrap">
+            <td className="text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide border border-gray-200 px-1 py-1.5 whitespace-nowrap">
               SCORE
             </td>
             {sorted.map((h) => {
@@ -79,36 +75,22 @@ export function HoleScorecard({ holes, courseHalf, holeAvgs, total }: HoleScorec
                 </td>
               );
             })}
-            {/* Total + vs-par badge */}
-            <td className={`${tdBase} bg-[#006747]/8 text-[#006747] font-bold`}>
-              <div className="flex flex-col items-center leading-tight">
-                <span>{total}</span>
-                <span className={`text-[9px] font-semibold ${totalDiff > 0 ? "text-red-500" : totalDiff < 0 ? "text-[#006747]" : "text-gray-400"}`}>
-                  {fmtVsPar(totalDiff)}
-                </span>
-              </div>
-            </td>
           </tr>
 
           {/* ── Avg row — only if 2+ rounds with hole data ── */}
           {hasAvgs && (
             <tr>
-              <td className="text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide border border-gray-200 px-2 py-1.5 bg-gray-50/40 whitespace-nowrap">
+              <td className="text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide border border-gray-200 px-1 py-1.5 bg-gray-50/40 whitespace-nowrap">
                 AVG
               </td>
               {sorted.map((h) => {
                 const a = holeAvgs[h.hole_number];
                 return (
-                  <td key={h.hole_number} className={`${tdBase} text-xs text-gray-400 bg-gray-50/40`}>
+                  <td key={h.hole_number} className={`${tdBase} text-gray-400 bg-gray-50/40`}>
                     {a !== undefined ? a.toFixed(1) : "—"}
                   </td>
                 );
               })}
-              <td className={`${tdBase} text-xs text-gray-400 bg-gray-50/40`}>
-                {Object.values(holeAvgs).length > 0
-                  ? Object.values(holeAvgs).reduce((a, b) => a + b, 0).toFixed(1)
-                  : "—"}
-              </td>
             </tr>
           )}
         </tbody>
