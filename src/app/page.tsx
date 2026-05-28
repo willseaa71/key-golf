@@ -34,13 +34,14 @@ export default async function HomePage() {
   // Nav is shown regardless
   const navGrid = (
     <div className="space-y-3">
-      {/* Enter Score CTA — unchanged */}
+      {/* Enter Score CTA */}
       <Link
         href={ENTER_CARD.href}
         className="col-span-2 flex items-center gap-4 rounded-xl bg-[#006747] text-white px-5 py-4 hover:bg-[#005236] transition-colors"
       >
         {ENTER_CARD.icon}
-        <p className="font-semibold text-lg">{ENTER_CARD.label}</p>
+        <p className="flex-1 font-semibold text-lg">{ENTER_CARD.label}</p>
+        <ChevronRight size={16} className="text-[#C9A84C]" />
       </Link>
 
       {/* Horizontal pill rows */}
@@ -154,17 +155,17 @@ export default async function HomePage() {
         )}
       </div>
 
-      {/* Weather */}
-      <WeatherWidget />
-
       {/* Nav grid */}
       {navGrid}
+
+      {/* Weather */}
+      <WeatherWidget />
 
       {/* Mini leaderboard */}
       {top5.length > 0 && (
         <section className="border-t border-[#006747] pt-6 mt-6">
           <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-3">
-            Top Players · Season Avg
+            Top Players
           </h2>
           <div className="rounded-xl border border-gray-200 overflow-hidden">
             {top5.map(({ id, name, seasonAvg, rank }) => (
