@@ -53,9 +53,9 @@ function StatRow({
 }) {
   const d = diff(score, reference);
   return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-      <span className="text-sm text-gray-600">{label}</span>
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 gap-2">
+      <span className="text-sm text-gray-600 min-w-0">{label}</span>
+      <div className="flex items-center gap-1.5 shrink-0">
         <span className="text-sm font-medium text-gray-800">{fmt(reference)}</span>
         <DiffBadge d={d} />
       </div>
