@@ -225,25 +225,25 @@ export function SeasonChart({
       </svg>
 
       {/* Legend */}
-      <div className="flex gap-4 justify-end text-xs text-gray-500 mt-2 flex-wrap">
-        <span className="flex items-center gap-1.5">
+      <div className="flex gap-3 justify-end text-xs text-gray-500 mt-2">
+        <span className="flex items-center gap-1 whitespace-nowrap">
           <span className="inline-block w-3 h-3 rounded-full bg-[#006747]" />
-          Beat 2025 avg
+          Beat avg
         </span>
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-1 whitespace-nowrap">
           <span className="inline-block w-3 h-3 rounded-full bg-red-600" />
-          Above 2025 avg
+          Above avg
         </span>
         {avg2025 !== null && (
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-1 whitespace-nowrap">
             <span className="inline-block w-4 border-t-2 border-dashed border-amber-600" />
-            2025 avg
+            &apos;25 avg
           </span>
         )}
         {avg2024 !== null && (
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-1 whitespace-nowrap">
             <span className="inline-block w-4 border-t-2 border-dashed border-gray-600" />
-            2024 avg
+            &apos;24 avg
           </span>
         )}
       </div>

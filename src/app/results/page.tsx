@@ -466,7 +466,7 @@ export default async function ResultsPage({
           {/* Chart */}
           <div className="rounded-xl border border-gray-200 p-4">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">
-              My season · lower is better
+              My season
             </p>
             <SeasonChart
               weeklyScores={focal.allRounds}
@@ -482,7 +482,7 @@ export default async function ResultsPage({
             return holeScores.length > 0 ? (
               <div className="rounded-xl border border-gray-200 p-4">
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">
-                  Hole scores · Week {weekNumber}
+                  Week {weekNumber}
                 </p>
                 <HoleScorecard
                   holes={holeScores}
@@ -498,7 +498,7 @@ export default async function ResultsPage({
           {focalHoleRounds.length > 0 && (
             <div className="rounded-xl border border-gray-200 p-4">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-3">
-                Hole profile · lower is better
+                Hole profile
               </p>
               <HoleProfileChart
                 rounds={focalHoleRounds.map((r) => ({
