@@ -640,19 +640,19 @@ export default async function ResultsPage({
       <div className="flex gap-3 pt-2">
         <Link
           href="/scorecard"
-          className="flex-1 text-center py-3 rounded-xl border border-gray-300 text-sm text-gray-600 font-medium hover:bg-gray-50"
+          className="flex-1 flex items-center justify-center py-3 rounded-xl border border-gray-300 text-sm text-gray-600 font-medium hover:bg-gray-50 text-center"
         >
           Season scorecard
         </Link>
         <Link
           href="/"
-          className="flex-1 text-center py-3 rounded-xl border border-gray-300 text-sm text-gray-600 font-medium hover:bg-gray-50"
+          className="flex-1 flex items-center justify-center py-3 rounded-xl border border-gray-300 text-sm text-gray-600 font-medium hover:bg-gray-50"
         >
           Home
         </Link>
         <Link
           href="/enter"
-          className="flex-1 text-center py-3 rounded-xl bg-[#006747] text-white text-sm font-medium hover:bg-[#005236]"
+          className="flex-1 flex items-center justify-center py-3 rounded-xl bg-[#006747] text-white text-sm font-medium hover:bg-[#005236]"
         >
           Enter score
         </Link>
