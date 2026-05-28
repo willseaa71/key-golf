@@ -155,11 +155,11 @@ export default async function HomePage() {
         )}
       </div>
 
-      {/* Nav grid */}
-      {navGrid}
-
       {/* Weather */}
       <WeatherWidget />
+
+      {/* Nav grid */}
+      {navGrid}
 
       {/* Mini leaderboard */}
       {top5.length > 0 && (

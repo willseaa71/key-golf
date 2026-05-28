@@ -129,27 +129,27 @@ async function WeatherCard() {
       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
         Next round · {formatDate(thursday)} · Saratoga Springs
       </p>
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-3">
         {/* Condition */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {cond.icon}
           <span className="text-sm font-medium text-gray-800">{cond.label}</span>
         </div>
         {/* Temp */}
-        <div className="flex items-baseline gap-1 text-sm">
+        <div className="flex items-baseline gap-0.5 text-sm">
           <span className="font-semibold text-gray-900">{high}°</span>
           <span className="text-gray-400">/</span>
-          <span className="text-gray-500">{low}°F</span>
+          <span className="text-gray-500">{low}°</span>
         </div>
         {/* Wind */}
         <div className="flex items-center gap-1 text-sm text-gray-600">
-          <Wind size={18} className="text-gray-400" />
+          <Wind size={16} className="text-gray-400" />
           <span>{wind} mph</span>
         </div>
         {/* Rain */}
         <div className={`flex items-center gap-1 text-sm font-medium ${rainColor}`}>
-          <Umbrella size={18} className="text-blue-400" />
-          <span>{rain}% rain</span>
+          <Umbrella size={16} className="text-blue-400" />
+          <span>{rain}%</span>
         </div>
       </div>
     </div>
