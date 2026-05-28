@@ -261,7 +261,7 @@ export default async function AchievementsPage() {
 
   let holeInOne: MilestoneEarner | null = null;
   let eagle: MilestoneEarner | null = null;
-  let birdieMachine: MilestoneEarner | null = null;
+  let birdieMachineEarners: MilestoneEarner[] = [];
   let cleanCard: MilestoneEarner | null = null;
 
   if (allHoleScores.length > 0) {
@@ -285,29 +285,26 @@ export default async function AchievementsPage() {
       };
     }
 
-    // Birdie Machine: most birdies in a single round
-    const birdiesByRound = new Map<
-      number,
-      { count: number; round: (typeof allHoleScores)[0]["round"] }
-    >();
+    // Birdie Machine: all players with birdies this season, sorted by total count
+    const birdiesByPlayer = new Map<number, { count: number; name: string }>();
     for (const hs of allHoleScores) {
       const par = holePar(hs.hole_number, hs.round.course_half);
       if (hs.strokes === par - 1) {
-        const existing = birdiesByRound.get(hs.round_id);
+        const pid = hs.round.player_id;
+        const existing = birdiesByPlayer.get(pid);
         if (existing) {
           existing.count++;
         } else {
-          birdiesByRound.set(hs.round_id, { count: 1, round: hs.round });
+          birdiesByPlayer.set(pid, { count: 1, name: hs.round.player.name });
         }
       }
     }
-    if (birdiesByRound.size > 0) {
-      const best = [...birdiesByRound.values()].sort((a, b) => b.count - a.count)[0];
-      birdieMachine = {
-        name: best.round.player.name,
-        detail: `${best.count} birdie${best.count !== 1 ? "s" : ""} in a round · W${best.round.week_number}`,
-      };
-    }
+    birdieMachineEarners = [...birdiesByPlayer.values()]
+      .sort((a, b) => b.count - a.count)
+      .map(({ name, count }) => ({
+        name,
+        detail: `${count} birdie${count !== 1 ? "s" : ""} this season`,
+      }));
 
     // Clean Card: every hole at or under par in a round (9 holes recorded)
     const hsByRound = new Map<number, (typeof allHoleScores)>();
@@ -331,9 +328,8 @@ export default async function AchievementsPage() {
     }
   }
 
-  const anyMilestoneFired = [holeInOne, eagle, birdieMachine, cleanCard].some(
-    (m) => m !== null
-  );
+  const anyMilestoneFired =
+    holeInOne !== null || eagle !== null || birdieMachineEarners.length > 0 || cleanCard !== null;
 
   // ── Weekly Callouts ──────────────────────────────────────────────────────
 
@@ -716,13 +712,13 @@ export default async function AchievementsPage() {
                 earners={[eagle]}
               />
             )}
-            {birdieMachine && (
+            {birdieMachineEarners.length > 0 && (
               <AchievementCard
                 icon={<Wind size={18} className="text-[#006747]" />}
                 title="Birdie Machine"
-                description="Most birdies in a single round"
+                description="Players with birdies this season · most first"
                 accent="green"
-                earners={[birdieMachine]}
+                earners={birdieMachineEarners}
               />
             )}
             {cleanCard && (
@@ -741,8 +737,8 @@ export default async function AchievementsPage() {
             {!eagle && (
               <LockedCard icon="🦅" title="Eagle" description="2 under par on a single hole" />
             )}
-            {!birdieMachine && (
-              <LockedCard icon="🐦" title="Birdie Machine" description="Most birdies in a single round" />
+            {birdieMachineEarners.length === 0 && (
+              <LockedCard icon={<Wind size={18} className="text-gray-400" />} title="Birdie Machine" description="Players with birdies this season" />
             )}
             {!cleanCard && (
               <LockedCard icon="✅" title="Clean Card" description="Every hole at or under par" />
@@ -752,7 +748,7 @@ export default async function AchievementsPage() {
           <div className="space-y-3">
             <LockedCard icon="🎱" title="Hole in One" description="Ace a hole" />
             <LockedCard icon="🦅" title="Eagle" description="2 under par on a single hole" />
-            <LockedCard icon="🐦" title="Birdie Machine" description="Most birdies in a single round" />
+            <LockedCard icon={<Wind size={18} className="text-gray-400" />} title="Birdie Machine" description="Players with birdies this season" />
             <LockedCard icon="✅" title="Clean Card" description="Every hole at or under par" />
           </div>
         )}
