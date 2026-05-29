@@ -5,7 +5,7 @@ import { holePar } from "@/lib/course";
 import { CollapsibleAchievementCard } from "./CollapsibleCard";
 import {
   Trophy, Medal, TrendingDown, CalendarCheck, Flame, Flag,
-  Sun, Beer, RefreshCw, Skull, Bell, Ghost, ThumbsDown,
+  Sun, Beer, RefreshCw, Skull, Ghost, ThumbsDown,
   Moon, Dumbbell, Target, Hammer, Wind, Zap, CircleDot, CheckCircle,
 } from "lucide-react";
 
@@ -353,14 +353,6 @@ export default async function AchievementsPage() {
       currentWeekRounds.reduce((s, r) => s + r.total_score, 0) /
       currentWeekRounds.length;
 
-    // Bottom half of standings by season avg (higher avg = worse)
-    const standingsByAvg = allPlayers
-      .filter((p) => scores(p.id).length > 0)
-      .map((p) => ({ id: p.id, avg: playerAvg(scores(p.id))! }))
-      .sort((a, b) => a.avg - b.avg);
-    const halfwayIdx = Math.ceil(standingsByAvg.length / 2);
-    const bottomHalfIds = new Set(standingsByAvg.slice(halfwayIdx).map((x) => x.id));
-
     // -- Icarus (must compute first for priority rule) --
     const icarusPlayerIds = new Set<number>();
     const icarusEarners: { name: string; detail?: string }[] = [];
@@ -461,17 +453,6 @@ export default async function AchievementsPage() {
       weeklyCallouts.push({ icon: <Skull size={18} className="text-[#C9A84C]" />, title: "The Undertaker", description: "Buried the field — scored 5+ below the week's average", accent: "gold", earners: undertakerEarners });
     }
 
-    // -- Last Call (lowest score among bottom-half players this week) --
-    const bottomHalfRoundsThisWeek = currentWeekRounds.filter((r) =>
-      bottomHalfIds.has(r.player_id)
-    );
-    if (bottomHalfRoundsThisWeek.length > 0) {
-      const minBH = Math.min(...bottomHalfRoundsThisWeek.map((r) => r.total_score));
-      const lastCallEarners = bottomHalfRoundsThisWeek
-        .filter((r) => r.total_score === minBH)
-        .map((r) => ({ name: r.player.name, detail: String(r.total_score) }));
-      weeklyCallouts.push({ icon: <Bell size={18} className="text-gray-500" />, title: "Last Call", description: "Best score among the bottom half of the standings this week", accent: "slate", earners: lastCallEarners });
-    }
 
     // -- Déjà Vu (matched personal season low exactly, 2+ rounds) --
     const dejavuEarners: { name: string; detail?: string }[] = [];
