@@ -139,6 +139,12 @@ export default async function HomePage() {
 
   const top5 = rankedPlayers.filter((p) => p.seasonAvg !== null).slice(0, 5);
 
+  // Season field average (regulars only)
+  const regularScores = allSeasonRounds
+    .filter((r) => regulars.some((p) => p.id === r.player_id))
+    .map((r) => r.total_score);
+  const seasonFieldAvg = avg(regularScores);
+
   return (
     <main className="max-w-lg mx-auto px-4 py-8 space-y-8">
       {/* Header */}
@@ -164,9 +170,16 @@ export default async function HomePage() {
       {/* Mini leaderboard */}
       {top5.length > 0 && (
         <section className="border-t border-[#006747] pt-6 mt-6">
-          <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest mb-3">
-            Top Players
-          </h2>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest">
+              Top Players
+            </h2>
+            {seasonFieldAvg !== null && (
+              <span className="text-xs text-gray-400">
+                Field avg <span className="font-semibold text-gray-600">{fmt(seasonFieldAvg)}</span>
+              </span>
+            )}
+          </div>
           <div className="rounded-xl border border-gray-200 overflow-hidden">
             {top5.map(({ id, name, seasonAvg, rank }) => (
               <div
