@@ -270,8 +270,8 @@ export default async function ResultsPage({
         })()
       : null;
 
-  // Leaderboard: sort by season avg asc, tiebreak by prior week score asc, no-rounds last
-  const leaderboardSorted = [...allPlayers].sort((a, b) => {
+  // Leaderboard: regulars only — subs are excluded from ranking
+  const leaderboardSorted = [...allPlayers].filter(p => p.sub_order === null).sort((a, b) => {
     const aAvg = avg(seasonStatsByPlayer.get(a.id)?.rounds ?? []);
     const bAvg = avg(seasonStatsByPlayer.get(b.id)?.rounds ?? []);
     if (aAvg === null && bAvg === null) return a.name.localeCompare(b.name);
@@ -297,7 +297,7 @@ export default async function ResultsPage({
       priorStatsByPlayer.get(r.player_id)!.push(r.total_score);
     }
     const priorSorted = [...allPlayers]
-      .filter(p => priorStatsByPlayer.has(p.id))
+      .filter(p => p.sub_order === null && priorStatsByPlayer.has(p.id))
       .map(p => {
         const scores = priorStatsByPlayer.get(p.id)!;
         return { id: p.id, avg: scores.reduce((a, b) => a + b, 0) / scores.length };
@@ -331,6 +331,16 @@ export default async function ResultsPage({
     }
     return { player, rank: groupsAbove.size + 1, seasonAvgVal };
   });
+
+  // Subs — sorted by sub_order, never ranked
+  const subsLeaderboard = [...allPlayers]
+    .filter(p => p.sub_order !== null)
+    .sort((a, b) => (a.sub_order ?? 99) - (b.sub_order ?? 99))
+    .map(player => ({
+      player,
+      rank: null as number | null,
+      seasonAvgVal: avg(seasonStatsByPlayer.get(player.id)?.rounds ?? []),
+    }));
 
   return (
     <main className="max-w-lg mx-auto px-4 py-8 space-y-8 overflow-x-hidden">
@@ -538,10 +548,8 @@ export default async function ResultsPage({
             </thead>
             <tbody className="divide-y divide-gray-100">
               {(() => {
-                const regularRows = leaderboard.filter(({ player }) => player.sub_order === null);
-                const subRows = leaderboard
-                  .filter(({ player }) => player.sub_order !== null)
-                  .sort((a, b) => (a.player.sub_order ?? 99) - (b.player.sub_order ?? 99));
+                const regularRows = leaderboard;
+                const subRows = subsLeaderboard;
 
                 function PlayerRow({ player, rank, seasonAvgVal }: { player: typeof leaderboard[0]["player"]; rank: number | null; seasonAvgVal: number | null }) {
                   const weekRound = weekRoundByPlayer.get(player.id) ?? null;
