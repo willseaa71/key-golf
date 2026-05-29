@@ -9,7 +9,7 @@ import {
   Moon, Dumbbell, Target, Hammer, Wind, Zap, CircleDot, CheckCircle,
 } from "lucide-react";
 
-export const metadata = { title: "Achievements — KEY Golf" };
+export const metadata = { title: "Trophy Case — KEY Golf" };
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -126,7 +126,7 @@ export default async function AchievementsPage() {
       <main className="max-w-lg mx-auto px-4 py-10 space-y-6">
         <div>
           <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">{season.name}</p>
-          <h1 className="text-2xl font-bold">Achievements</h1>
+          <h1 className="text-2xl font-bold">Trophy Case</h1>
           <p className="text-gray-400 text-sm mt-2">No rounds yet — check back after the first week.</p>
         </div>
         <Link href="/results" className="inline-block text-sm text-[#006747] font-medium hover:underline">
