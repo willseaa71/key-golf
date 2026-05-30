@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { checkAndAutoCalculate } from "@/app/admin/actions/games";
 
 export type RoundFormState = {
   error?: string;
@@ -57,6 +58,8 @@ export async function submitRound(
     await db.holeScore.createMany({
       data: holes.map((strokes, i) => ({ round_id: round.id, hole_number: i + 1, strokes })),
     });
+    // Auto-calculate any Best Ball games on this date if all members are now ready
+    await checkAndAutoCalculate(date);
   } else {
     const total = parseInt(formData.get("total_score") as string, 10);
     if (isNaN(total) || total < 9 || total > 99) {

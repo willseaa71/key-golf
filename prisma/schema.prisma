@@ -8,12 +8,14 @@ datasource db {
 }
 
 model Player {
-  id             Int                  @id @default(autoincrement())
-  name           String               @unique
-  active         Boolean              @default(true)
-  sub_order      Int?                 // null = regular player; 1–N = sub priority order
-  rounds         Round[]
-  prior_averages PriorSeasonAverage[]
+  id                 Int                  @id @default(autoincrement())
+  name               String               @unique
+  active             Boolean              @default(true)
+  sub_order          Int?                 // null = regular player; 1–N = sub priority order
+  rounds             Round[]
+  prior_averages     PriorSeasonAverage[]
+  game_team_members  GameTeamMember[]
+  putt_off_games     Game[]
 }
 
 model PriorSeasonAverage {
@@ -59,4 +61,40 @@ model HoleScore {
   round       Round @relation(fields: [round_id], references: [id], onDelete: Cascade)
 
   @@unique([round_id, hole_number])
+}
+
+model Game {
+  id                   Int        @id @default(autoincrement())
+  name                 String
+  date                 DateTime
+  ruleset_type         String     // "BEST_BALL"
+  is_major             Boolean    @default(false)
+  status               String     @default("PENDING") // "PENDING" | "COMPLETE"
+  putt_off_winner_id   Int?
+  putt_off_winner      Player?    @relation(fields: [putt_off_winner_id], references: [id])
+  calculated_at        DateTime?
+  created_at           DateTime   @default(now())
+  updated_at           DateTime   @updatedAt
+  teams                GameTeam[]
+}
+
+model GameTeam {
+  id        Int              @id @default(autoincrement())
+  game_id   Int
+  name      String
+  points    Int?
+  is_winner Boolean          @default(false)
+  game      Game             @relation(fields: [game_id], references: [id], onDelete: Cascade)
+  members   GameTeamMember[]
+}
+
+model GameTeamMember {
+  id           Int      @id @default(autoincrement())
+  game_team_id Int
+  player_id    Int
+  is_sub       Boolean  @default(false)
+  team         GameTeam @relation(fields: [game_team_id], references: [id], onDelete: Cascade)
+  player       Player   @relation(fields: [player_id], references: [id])
+
+  @@unique([game_team_id, player_id])
 }
