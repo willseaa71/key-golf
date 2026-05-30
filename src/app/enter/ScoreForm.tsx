@@ -9,7 +9,7 @@ type Player = { id: number; name: string; sub_order: number | null };
 type Season = { id: number; name: string; start_date: string; end_date: string };
 type ActiveGameMember = { player_id: number; is_sub: boolean };
 type ActiveGameTeam = { id: number; name: string; members: ActiveGameMember[] };
-type ActiveGame = { id: number; status: string; is_major?: boolean; teams: ActiveGameTeam[] };
+type ActiveGame = { id: number; status: string; is_major?: boolean; date: string; teams: ActiveGameTeam[] };
 
 const TOTAL_WEEKS = 13;
 
@@ -21,7 +21,13 @@ function computeWeekNumber(dateStr: string, seasonStart: string): number {
 }
 
 function todayString(): string {
-  return new Date().toISOString().slice(0, 10);
+  // Use local date methods so the default matches the user's calendar date,
+  // not the UTC date (which can be a day ahead in US evening hours).
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 const EMPTY_HOLES = Array(9).fill("") as string[];
@@ -29,11 +35,11 @@ const EMPTY_HOLES = Array(9).fill("") as string[];
 export function ScoreForm({
   players,
   season,
-  activeGame,
+  pendingGames,
 }: {
   players: Player[];
   season: Season;
-  activeGame: ActiveGame | null;
+  pendingGames: ActiveGame[];
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -56,6 +62,11 @@ export function ScoreForm({
   const holeTotal = holes.reduce((sum, h) => sum + (parseInt(h, 10) || 0), 0);
   const selectedPlayer = players.find((p) => p.id === parseInt(playerId, 10));
   const courseHalfLabel = courseHalf === "front9" ? "Front-9" : courseHalf === "back9" ? "Back-9" : "";
+
+  // Match the game whose date (UTC ISO string) matches the selected round date.
+  // Comparison is done client-side using the form's date state so the user's
+  // local calendar date is used — not the server's UTC date.
+  const activeGame = pendingGames.find((g) => g.date.slice(0, 10) === date) ?? null;
 
   // Derive which game team (if any) the selected player is on
   const playerNumId = parseInt(playerId, 10);
@@ -168,11 +179,11 @@ export function ScoreForm({
             </select>
           </div>
 
-          {/* TEMP DEBUG — remove after confirming game lookup works */}
+          {/* TEMP DEBUG — remove after confirming */}
           <p className="text-[11px] text-gray-400">
             {activeGame
-              ? `⚑ Game ${activeGame.id} · ${activeGame.teams.flatMap(t => t.members).length} members · you: ${playerId || "none"} → team: ${playerTeam?.name ?? "not matched"}`
-              : "⚑ No game found for today"}
+              ? `⚑ Game ${activeGame.id} · ${activeGame.teams.flatMap(t => t.members).length} members · you: ${playerId || "none"} → ${playerTeam?.name ?? "not matched"}`
+              : `⚑ No game for ${date} (${pendingGames.length} pending)`}
           </p>
 
           {/* Team (read-only, game-aware) */}

@@ -5,10 +5,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Enter Score — KEY Golf" };
 
 export default async function EnterPage() {
-  // Compute today's date string in UTC (matches how game dates are stored)
-  const todayStr = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
-
-  const [players, season, allGames] = await Promise.all([
+  const [players, season, pendingGames] = await Promise.all([
     db.player.findMany({
       where: { active: true },
       orderBy: { name: "asc" },
@@ -21,7 +18,9 @@ export default async function EnterPage() {
       },
       orderBy: { start_date: "desc" },
     }),
+    // Fetch all PENDING games — the client will match by local date
     db.game.findMany({
+      where: { status: "PENDING" },
       include: {
         teams: {
           include: { members: true },
@@ -30,11 +29,6 @@ export default async function EnterPage() {
       },
     }),
   ]);
-
-  // Match on date string to avoid any UTC timestamp range edge cases
-  const activeGame = allGames.find(
-    (g) => g.date.toISOString().slice(0, 10) === todayStr
-  ) ?? null;
 
   if (!season) {
     return (
@@ -55,16 +49,17 @@ export default async function EnterPage() {
           start_date: season.start_date.toISOString(),
           end_date: season.end_date.toISOString(),
         }}
-        activeGame={activeGame ? {
-          id: activeGame.id,
-          status: activeGame.status,
-          is_major: activeGame.is_major,
-          teams: activeGame.teams.map((t) => ({
+        pendingGames={pendingGames.map((g) => ({
+          id: g.id,
+          status: g.status,
+          is_major: g.is_major,
+          date: g.date.toISOString(),
+          teams: g.teams.map((t) => ({
             id: t.id,
             name: t.name,
             members: t.members.map((m) => ({ player_id: m.player_id, is_sub: m.is_sub })),
           })),
-        } : null}
+        }))}
       />
     </main>
   );
