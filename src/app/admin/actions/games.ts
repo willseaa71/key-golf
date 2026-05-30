@@ -193,6 +193,7 @@ export async function createGame(
   });
 
   revalidatePath("/admin/games");
+  revalidatePath("/enter");
   redirect("/admin/games");
 }
 
@@ -319,5 +320,6 @@ export async function updateGame(
 
   revalidatePath("/admin/games");
   revalidatePath(`/admin/games/${gameId}`);
+  revalidatePath("/enter");
   redirect(`/admin/games/${gameId}`);
 }

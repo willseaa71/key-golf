@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { ScoreForm } from "./ScoreForm";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Enter Score — KEY Golf" };
 
 export default async function EnterPage() {
