@@ -5,11 +5,10 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Enter Score — KEY Golf" };
 
 export default async function EnterPage() {
-  const now = new Date();
-  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
-  const todayEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59));
+  // Compute today's date string in UTC (matches how game dates are stored)
+  const todayStr = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 
-  const [players, season, activeGame] = await Promise.all([
+  const [players, season, allGames] = await Promise.all([
     db.player.findMany({
       where: { active: true },
       orderBy: { name: "asc" },
@@ -22,8 +21,7 @@ export default async function EnterPage() {
       },
       orderBy: { start_date: "desc" },
     }),
-    db.game.findFirst({
-      where: { date: { gte: todayStart, lte: todayEnd } },
+    db.game.findMany({
       include: {
         teams: {
           include: { members: true },
@@ -32,6 +30,11 @@ export default async function EnterPage() {
       },
     }),
   ]);
+
+  // Match on date string to avoid any UTC timestamp range edge cases
+  const activeGame = allGames.find(
+    (g) => g.date.toISOString().slice(0, 10) === todayStr
+  ) ?? null;
 
   if (!season) {
     return (

@@ -168,6 +168,13 @@ export function ScoreForm({
             </select>
           </div>
 
+          {/* TEMP DEBUG — remove after confirming game lookup works */}
+          <p className="text-[11px] text-gray-400">
+            {activeGame
+              ? `⚑ Game ${activeGame.id} · ${activeGame.teams.flatMap(t => t.members).length} members · you: ${playerId || "none"} → team: ${playerTeam?.name ?? "not matched"}`
+              : "⚑ No game found for today"}
+          </p>
+
           {/* Team (read-only, game-aware) */}
           {playerTeam && (
             <div>
