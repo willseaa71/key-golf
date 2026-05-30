@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { checkAdminAuth } from "@/lib/admin-auth";
-import { triggerCalculation, setPuttOffWinner } from "@/app/admin/actions/games";
+import { triggerCalculation, setPuttOffWinner, deleteGame } from "@/app/admin/actions/games";
 
 export const metadata = { title: "Game Detail — KEY Golf Admin" };
 
@@ -62,6 +62,23 @@ export default async function GameDetailPage({
     ? tiedTeams.flatMap((t) => t.members.map((m) => m.player))
     : [];
 
+  // Named server actions (arrow functions don't support the "use server" directive)
+  async function handleTrigger() {
+    "use server";
+    await triggerCalculation(gameId);
+  }
+
+  async function handlePuttOff(formData: FormData) {
+    "use server";
+    const playerId = parseInt(formData.get("putt_off_winner_id") as string, 10);
+    await setPuttOffWinner(gameId, playerId);
+  }
+
+  async function handleDelete() {
+    "use server";
+    await deleteGame(gameId);
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -93,15 +110,31 @@ export default async function GameDetailPage({
             {game.ruleset_type === "BEST_BALL" ? "Best Ball" : game.ruleset_type}
           </p>
         </div>
-        <span
-          className={`mt-1 text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
-            isComplete
-              ? "bg-[#006747]/10 text-[#006747]"
-              : "bg-gray-100 text-gray-500"
-          }`}
-        >
-          {game.status}
-        </span>
+        <div className="flex items-center gap-3 shrink-0">
+          <span
+            className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+              isComplete
+                ? "bg-[#006747]/10 text-[#006747]"
+                : "bg-gray-100 text-gray-500"
+            }`}
+          >
+            {game.status}
+          </span>
+          <Link
+            href={`/admin/games/${gameId}/edit`}
+            className="text-sm text-[#006747] font-medium hover:underline"
+          >
+            Edit
+          </Link>
+          <form action={handleDelete}>
+            <button
+              type="submit"
+              className="text-sm text-red-500 font-medium hover:underline"
+            >
+              Delete
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* ── PENDING view ── */}
@@ -153,12 +186,7 @@ export default async function GameDetailPage({
           </div>
 
           {/* Calculate button */}
-          <form
-            action={async () => {
-              "use server";
-              await triggerCalculation(gameId);
-            }}
-          >
+          <form action={handleTrigger}>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <p className="text-sm text-amber-800 mb-3">
                 <strong>Manual trigger:</strong> Only use this when all scores are confirmed.
@@ -167,11 +195,6 @@ export default async function GameDetailPage({
               <button
                 type="submit"
                 className="w-full py-2.5 rounded-lg bg-[#006747] text-white text-sm font-semibold hover:bg-[#005236] disabled:opacity-60"
-                onClick={(e) => {
-                  if (!confirm("Calculate Best Ball results now? This cannot be undone.")) {
-                    e.preventDefault();
-                  }
-                }}
               >
                 All Scores Are In — Calculate Results
               </button>
@@ -189,14 +212,7 @@ export default async function GameDetailPage({
               <p className="text-sm font-semibold text-amber-800">
                 Tie detected — select the putt-off winner below
               </p>
-              <form
-                action={async (formData: FormData) => {
-                  "use server";
-                  const playerId = parseInt(formData.get("putt_off_winner_id") as string, 10);
-                  await setPuttOffWinner(gameId, playerId);
-                }}
-                className="flex gap-3"
-              >
+              <form action={handlePuttOff} className="flex gap-3">
                 <select
                   name="putt_off_winner_id"
                   required

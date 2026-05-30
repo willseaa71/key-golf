@@ -239,3 +239,85 @@ export async function setPuttOffWinner(gameId: number, playerId: number): Promis
 
   revalidatePath(`/admin/games/${gameId}`);
 }
+
+// ── Admin: Delete game ───────────────────────────────────────────────────────
+
+export async function deleteGame(gameId: number): Promise<void> {
+  await checkAdminAuth();
+  // GameTeam and GameTeamMember cascade via onDelete: Cascade in schema
+  await db.game.delete({ where: { id: gameId } });
+  revalidatePath("/admin/games");
+  redirect("/admin/games");
+}
+
+// ── Admin: Update game (metadata + teams rebuilt) ────────────────────────────
+
+export type UpdateGameState = { error?: string };
+
+export async function updateGame(
+  gameId: number,
+  _prev: UpdateGameState,
+  formData: FormData
+): Promise<UpdateGameState> {
+  await checkAdminAuth();
+
+  const name = (formData.get("name") as string).trim();
+  const dateStr = formData.get("date") as string;
+  const rulesetType = formData.get("ruleset_type") as string;
+  const isMajor = formData.get("is_major") === "on";
+
+  if (!name) return { error: "Game name is required." };
+  if (!dateStr || isNaN(new Date(dateStr).getTime())) return { error: "Invalid date." };
+  if (rulesetType !== "BEST_BALL") return { error: "Invalid ruleset." };
+
+  const teamsJson = formData.get("teams") as string;
+  let teams: { name: string; members: { player_id: number; is_sub: boolean }[] }[];
+  try {
+    teams = JSON.parse(teamsJson);
+  } catch {
+    return { error: "Invalid team data." };
+  }
+
+  if (!teams || teams.length < 2) return { error: "At least 2 teams are required." };
+  for (const t of teams) {
+    if (!t.name?.trim()) return { error: "All teams must have a name." };
+  }
+
+  const allPlayerIds = teams.flatMap((t) => t.members.map((m) => m.player_id));
+  if (new Set(allPlayerIds).size !== allPlayerIds.length) {
+    return { error: "A player cannot appear on more than one team." };
+  }
+
+  // Rebuild teams in a transaction: delete all existing teams (cascades members), recreate
+  await db.$transaction(async (tx) => {
+    await tx.gameTeam.deleteMany({ where: { game_id: gameId } });
+    await tx.game.update({
+      where: { id: gameId },
+      data: {
+        name,
+        date: new Date(dateStr + "T12:00:00Z"),
+        ruleset_type: rulesetType,
+        is_major: isMajor,
+        // Reset result state when game is edited
+        status: "PENDING",
+        calculated_at: null,
+        putt_off_winner_id: null,
+        teams: {
+          create: teams.map((t) => ({
+            name: t.name.trim(),
+            members: {
+              create: t.members.map((m) => ({
+                player_id: m.player_id,
+                is_sub: m.is_sub,
+              })),
+            },
+          })),
+        },
+      },
+    });
+  });
+
+  revalidatePath("/admin/games");
+  revalidatePath(`/admin/games/${gameId}`);
+  redirect(`/admin/games/${gameId}`);
+}
