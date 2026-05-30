@@ -179,41 +179,16 @@ export function ScoreForm({
             </select>
           </div>
 
-          {/* TEMP DEBUG — remove after confirming */}
-          <p className="text-[11px] text-gray-400">
-            {activeGame
-              ? `⚑ Game ${activeGame.id} · ${activeGame.teams.flatMap(t => t.members).length} members · you: ${playerId || "none"} → ${playerTeam?.name ?? "not matched"}`
-              : `⚑ No game for ${date} (${pendingGames.length} pending)`}
-          </p>
-
-          {/* Team (read-only, game-aware) */}
+          {/* Team (read-only, game-aware — no label) */}
           {playerTeam && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Team
-              </label>
-              <div className="w-full border border-gray-200 rounded-lg px-3 py-3 text-base bg-gray-50 text-gray-700 flex items-center gap-2">
-                <span className="font-medium">{playerTeam.name}</span>
-                {activeGame?.is_major && (
-                  <span className="text-[10px] font-semibold text-[#C9A84C] bg-[#C9A84C]/10 px-1.5 py-0.5 rounded">
-                    MAJOR
-                  </span>
-                )}
-              </div>
+            <div className="w-full border border-gray-200 rounded-lg px-3 py-3 text-base bg-gray-50 text-gray-700 flex items-center gap-2">
+              <span className="font-medium">{playerTeam.name}</span>
+              {activeGame?.is_major && (
+                <span className="text-[10px] font-semibold text-[#C9A84C] bg-[#C9A84C]/10 px-1.5 py-0.5 rounded">
+                  MAJOR
+                </span>
+              )}
             </div>
-          )}
-
-          {/* Putt-off winner toggle (PENDING games only) */}
-          {playerTeam && activeGame?.status === "PENDING" && (
-            <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={puttOffWinner}
-                onChange={(e) => setPuttOffWinner(e.target.checked)}
-                className="w-4 h-4 accent-[#C9A84C]"
-              />
-              <span className="text-sm font-medium text-gray-700">I won the putt-off</span>
-            </label>
           )}
 
           {/* Date + derived week */}
@@ -325,11 +300,24 @@ export function ScoreForm({
                   );
                 })}
               </div>
-              <div className="mt-3 text-right">
-                <span className="text-sm text-gray-500">Total: </span>
-                <span className="text-2xl font-bold text-gray-900">
-                  {holeTotal > 0 ? holeTotal : "—"}
-                </span>
+              <div className="mt-3 flex items-center justify-between">
+                {playerTeam && activeGame?.status === "PENDING" ? (
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={puttOffWinner}
+                      onChange={(e) => setPuttOffWinner(e.target.checked)}
+                      className="w-4 h-4 accent-[#C9A84C]"
+                    />
+                    <span className="text-sm text-gray-600">I won the putt-off</span>
+                  </label>
+                ) : <span />}
+                <div>
+                  <span className="text-sm text-gray-500">Total: </span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    {holeTotal > 0 ? holeTotal : "—"}
+                  </span>
+                </div>
               </div>
             </div>
           )}
