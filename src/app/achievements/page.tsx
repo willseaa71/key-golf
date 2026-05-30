@@ -115,6 +115,34 @@ export default async function AchievementsPage() {
     orderBy: { name: "asc" },
   });
 
+  // ── Major Winners ─────────────────────────────────────────────────────────
+
+  const completedMajors = await db.game.findMany({
+    where: { is_major: true, status: "COMPLETE" },
+    include: {
+      teams: {
+        include: { members: { include: { player: true } } },
+        orderBy: { id: "asc" },
+      },
+    },
+    orderBy: { date: "desc" },
+  });
+
+  const majorWinsByPlayer = new Map<number, { name: string; wins: number }>();
+  for (const g of completedMajors) {
+    const winningTeam = g.teams.find((t) => t.is_winner);
+    if (!winningTeam) continue;
+    for (const m of winningTeam.members) {
+      const entry = majorWinsByPlayer.get(m.player_id);
+      if (entry) {
+        entry.wins++;
+      } else {
+        majorWinsByPlayer.set(m.player_id, { name: m.player.name, wins: 1 });
+      }
+    }
+  }
+  const majorChampions = [...majorWinsByPlayer.values()].sort((a, b) => b.wins - a.wins);
+
   const allRounds = await db.round.findMany({
     where: { season_id: season.id },
     include: { player: true },
@@ -568,11 +596,99 @@ export default async function AchievementsPage() {
       {/* Header */}
       <div>
         <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">{season.name}</p>
-        <h1 className="text-2xl font-bold">Achievements</h1>
+        <h1 className="text-2xl font-bold">Trophy Case</h1>
         <p className="text-sm text-gray-500 mt-1">
           {weeksPlayed} of 13 weeks played
         </p>
       </div>
+
+      {/* ── Major Winners ── */}
+      {completedMajors.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+            Major Winners
+          </h2>
+
+          {/* Per-major result cards */}
+          {completedMajors.map((game) => {
+            const winningTeam = game.teams.find((t) => t.is_winner);
+            return (
+              <div
+                key={game.id}
+                className="rounded-xl border border-[#C9A84C]/40 bg-[#C9A84C]/5 p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#C9A84C]/15 shrink-0">
+                    <Trophy size={18} className="text-[#C9A84C]" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-sm text-gray-900">{game.name}</p>
+                      <span className="text-[10px] font-semibold text-[#C9A84C] bg-[#C9A84C]/10 px-1.5 py-0.5 rounded">
+                        MAJOR
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {new Date(game.date).toLocaleDateString("en-US", {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                        timeZone: "UTC",
+                      })}
+                    </p>
+                    {winningTeam ? (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-500 mb-1">Winners — {winningTeam.name}</p>
+                        <div className="space-y-0.5">
+                          {winningTeam.members.map((m) => (
+                            <p key={m.player_id} className="text-sm font-medium text-gray-800">
+                              {m.player.name}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-2 italic">Result pending</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Major Champions leaderboard */}
+          {majorChampions.length > 0 && (
+            <div className="rounded-xl border border-[#C9A84C]/40 bg-[#C9A84C]/5 p-4">
+              <p className="text-xs font-semibold text-[#C9A84C] uppercase tracking-wide mb-3">
+                Major Champions
+              </p>
+              <div className="space-y-2.5">
+                {majorChampions.map((c, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="flex-1 text-sm font-medium text-gray-800">{c.name}</span>
+                    <div className="flex items-center gap-1.5">
+                      {c.wins >= 5 && (
+                        <span className="text-[11px] font-bold text-white bg-[#7B3F00] px-2 py-0.5 rounded-full">
+                          Legend
+                        </span>
+                      )}
+                      {c.wins >= 3 && c.wins < 5 && (
+                        <span className="text-[11px] font-bold text-white bg-[#C9A84C] px-2 py-0.5 rounded-full">
+                          Champion
+                        </span>
+                      )}
+                      <span className="text-base">{"🏆".repeat(Math.min(c.wins, 5))}</span>
+                      <span className="text-xs text-gray-400 tabular-nums">
+                        {c.wins} {c.wins === 1 ? "win" : "wins"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ── Season Low Hero ── */}
       <div className="rounded-2xl border-2 border-[#C9A84C]/50 bg-gradient-to-br from-[#C9A84C]/10 to-[#C9A84C]/5 p-5">

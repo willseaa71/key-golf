@@ -7,6 +7,9 @@ import { submitRound, type RoundFormState } from "@/app/actions/rounds";
 
 type Player = { id: number; name: string; sub_order: number | null };
 type Season = { id: number; name: string; start_date: string; end_date: string };
+type ActiveGameMember = { player_id: number; is_sub: boolean };
+type ActiveGameTeam = { id: number; name: string; members: ActiveGameMember[] };
+type ActiveGame = { id: number; status: string; is_major?: boolean; teams: ActiveGameTeam[] };
 
 const TOTAL_WEEKS = 13;
 
@@ -23,7 +26,15 @@ function todayString(): string {
 
 const EMPTY_HOLES = Array(9).fill("") as string[];
 
-export function ScoreForm({ players, season }: { players: Player[]; season: Season }) {
+export function ScoreForm({
+  players,
+  season,
+  activeGame,
+}: {
+  players: Player[];
+  season: Season;
+  activeGame: ActiveGame | null;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
 
   const [state, formAction, pending] = useActionState<RoundFormState, FormData>(
@@ -39,11 +50,18 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
   const [totalScore, setTotalScore] = useState<string>("");
   const [view, setView] = useState<"form" | "confirm">("form");
   const [clientError, setClientError] = useState<string>("");
+  const [puttOffWinner, setPuttOffWinner] = useState<boolean>(false);
 
   const weekNumber = computeWeekNumber(date, season.start_date);
   const holeTotal = holes.reduce((sum, h) => sum + (parseInt(h, 10) || 0), 0);
   const selectedPlayer = players.find((p) => p.id === parseInt(playerId, 10));
   const courseHalfLabel = courseHalf === "front9" ? "Front-9" : courseHalf === "back9" ? "Back-9" : "";
+
+  // Derive which game team (if any) the selected player is on
+  const playerNumId = parseInt(playerId, 10);
+  const playerTeam = activeGame?.teams.find((t) =>
+    t.members.some((m) => m.player_id === playerNumId)
+  ) ?? null;
 
   function handleHoleChange(index: number, value: string) {
     setHoles((prev) => {
@@ -90,6 +108,7 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
     setTotalScore("");
     setView("form");
     setClientError("");
+    setPuttOffWinner(false);
   }
 
   const serverError = state.error;
@@ -114,6 +133,14 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
       {mode === "total" && (
         <input type="hidden" name="total_score" value={totalScore} />
       )}
+      {/* Game-aware hidden fields */}
+      {activeGame && playerTeam && (
+        <>
+          <input type="hidden" name="game_id" value={activeGame.id} />
+          <input type="hidden" name="team_id" value={playerTeam.id} />
+          <input type="hidden" name="putt_off_winner" value={puttOffWinner ? "true" : ""} />
+        </>
+      )}
 
       {view === "form" ? (
         <div className="space-y-6">
@@ -124,7 +151,7 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
             </label>
             <select
               value={playerId}
-              onChange={(e) => setPlayerId(e.target.value)}
+              onChange={(e) => { setPlayerId(e.target.value); setPuttOffWinner(false); }}
               className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[#006747]"
             >
               <option value="">Select a player…</option>
@@ -140,6 +167,36 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
               </optgroup>
             </select>
           </div>
+
+          {/* Team (read-only, game-aware) */}
+          {playerTeam && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Team
+              </label>
+              <div className="w-full border border-gray-200 rounded-lg px-3 py-3 text-base bg-gray-50 text-gray-700 flex items-center gap-2">
+                <span className="font-medium">{playerTeam.name}</span>
+                {activeGame?.is_major && (
+                  <span className="text-[10px] font-semibold text-[#C9A84C] bg-[#C9A84C]/10 px-1.5 py-0.5 rounded">
+                    MAJOR
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Putt-off winner toggle (PENDING games only) */}
+          {playerTeam && activeGame?.status === "PENDING" && (
+            <label className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={puttOffWinner}
+                onChange={(e) => setPuttOffWinner(e.target.checked)}
+                className="w-4 h-4 accent-[#C9A84C]"
+              />
+              <span className="text-sm font-medium text-gray-700">I won the putt-off</span>
+            </label>
+          )}
 
           {/* Date + derived week */}
           <div>
@@ -318,6 +375,18 @@ export function ScoreForm({ players, season }: { players: Player[]; season: Seas
               <span className="text-gray-500">Course half</span>
               <span className="font-medium text-black">{courseHalfLabel}</span>
             </div>
+            {playerTeam && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Team</span>
+                <span className="font-medium text-black">{playerTeam.name}</span>
+              </div>
+            )}
+            {playerTeam && puttOffWinner && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Putt-off</span>
+                <span className="font-medium text-[#C9A84C]">Winner ✓</span>
+              </div>
+            )}
             {mode === "hole" ? (
               <>
                 <div className="pt-1">

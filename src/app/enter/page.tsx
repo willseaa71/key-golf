@@ -4,7 +4,11 @@ import { ScoreForm } from "./ScoreForm";
 export const metadata = { title: "Enter Score — KEY Golf" };
 
 export default async function EnterPage() {
-  const [players, season] = await Promise.all([
+  const now = new Date();
+  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+  const todayEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59));
+
+  const [players, season, activeGame] = await Promise.all([
     db.player.findMany({
       where: { active: true },
       orderBy: { name: "asc" },
@@ -16,6 +20,15 @@ export default async function EnterPage() {
         end_date: { gte: new Date() },
       },
       orderBy: { start_date: "desc" },
+    }),
+    db.game.findFirst({
+      where: { date: { gte: todayStart, lte: todayEnd } },
+      include: {
+        teams: {
+          include: { members: true },
+          orderBy: { id: "asc" },
+        },
+      },
     }),
   ]);
 
@@ -38,6 +51,16 @@ export default async function EnterPage() {
           start_date: season.start_date.toISOString(),
           end_date: season.end_date.toISOString(),
         }}
+        activeGame={activeGame ? {
+          id: activeGame.id,
+          status: activeGame.status,
+          is_major: activeGame.is_major,
+          teams: activeGame.teams.map((t) => ({
+            id: t.id,
+            name: t.name,
+            members: t.members.map((m) => ({ player_id: m.player_id, is_sub: m.is_sub })),
+          })),
+        } : null}
       />
     </main>
   );

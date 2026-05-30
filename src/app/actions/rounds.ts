@@ -70,6 +70,19 @@ export async function submitRound(
     });
   }
 
+  // If the player flagged themselves as putt-off winner, record it on the game
+  const gameIdRaw = formData.get("game_id") as string | null;
+  const puttOffWinnerFlag = formData.get("putt_off_winner") as string | null;
+  if (gameIdRaw && puttOffWinnerFlag === "true") {
+    const gameId = parseInt(gameIdRaw, 10);
+    if (!isNaN(gameId)) {
+      await db.game.update({
+        where: { id: gameId },
+        data: { putt_off_winner_id: playerId },
+      });
+    }
+  }
+
   revalidatePath("/");
   revalidatePath("/results");
   redirect(`/results?player=${playerId}&week=${weekNumber}`);
