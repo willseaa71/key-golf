@@ -99,7 +99,7 @@ export default async function HomePage() {
   const regularIds = new Set(regulars.map((p) => p.id));
   const thisWeekRegularCount =
     latestWeek !== null
-      ? allSeasonRounds.filter((r) => r.week_number === latestWeek && regularIds.has(r.player_id)).length
+      ? allSeasonRounds.filter((r) => r.week_number === latestWeek).length
       : 0;
   const regularCount = regulars.length;
 
