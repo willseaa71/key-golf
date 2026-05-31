@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { WeatherWidget } from "./results/WeatherWidget";
 import { Flag, Trophy, ClipboardList, Award, BarChart2, ChevronRight } from "lucide-react";
 
-export const metadata = { title: "KEY Golf" };
+export const metadata = { title: "KEY Golf League" };
 
 function avg(scores: number[]): number | null {
   return scores.length === 0 ? null : scores.reduce((a, b) => a + b, 0) / scores.length;
@@ -14,14 +14,32 @@ function fmt(n: number | null) {
   return n === null ? "—" : n.toFixed(1);
 }
 
-const ENTER_CARD = { href: "/enter", icon: <Flag size={20} className="text-white" />, label: "Enter Score" };
-
 const NAV_PILLS = [
-  { href: "/results",      icon: <Trophy size={20} className="text-[#006747]" />,      label: "Standings"       },
+  { href: "/results",      icon: <Trophy size={20} className="text-[#006747]" />,      label: "Standings"        },
   { href: "/scorecard",    icon: <ClipboardList size={20} className="text-gray-600" />, label: "Scorecard by Week" },
-  { href: "/achievements", icon: <Award size={20} className="text-[#C9A84C]" />,        label: "Trophy Case"     },
+  { href: "/achievements", icon: <Award size={20} className="text-[#C9A84C]" />,        label: "Trophy Case"      },
   { href: "/stats",        icon: <BarChart2 size={20} className="text-gray-600" />,     label: "Hole Performance" },
 ];
+
+function NavPills() {
+  return (
+    <div className="space-y-2">
+      {NAV_PILLS.map((card) => (
+        <Link
+          key={card.href}
+          href={card.href}
+          className="flex items-center gap-4 px-4 py-4 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+        >
+          <span className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100">
+            {card.icon}
+          </span>
+          <span className="flex-1 text-base font-semibold text-gray-900">{card.label}</span>
+          <ChevronRight size={16} className="text-[#006747]" />
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default async function HomePage() {
   const season = await db.season.findFirst({
@@ -31,48 +49,26 @@ export default async function HomePage() {
     },
   });
 
-  // Nav is shown regardless
-  const navGrid = (
-    <div className="space-y-3">
-      {/* Enter Score CTA */}
-      <Link
-        href={ENTER_CARD.href}
-        className="col-span-2 flex items-center gap-4 rounded-xl bg-[#006747] text-white px-5 py-4 hover:bg-[#005236] transition-colors"
-      >
-        {ENTER_CARD.icon}
-        <p className="flex-1 font-semibold text-lg">{ENTER_CARD.label}</p>
-        <ChevronRight size={16} className="text-[#C9A84C]" />
-      </Link>
-
-      {/* Horizontal pill rows */}
-      <div className="space-y-2">
-        {NAV_PILLS.map((card) => (
-          <Link
-            key={card.href}
-            href={card.href}
-            className="flex items-center gap-4 px-4 py-4 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
-          >
-            <span className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100">
-              {card.icon}
-            </span>
-            <span className="flex-1 text-base font-semibold text-gray-900">{card.label}</span>
-            <ChevronRight size={16} className="text-[#006747]" />
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-
   if (!season) {
     return (
       <main className="max-w-lg mx-auto px-4 py-8 space-y-8">
         {/* Header */}
         <div>
           <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">KEY Golf</p>
-          <h1 className="text-3xl font-bold tracking-tight">KEY Golf</h1>
+          <h1 className="text-3xl font-bold tracking-tight">KEY Golf League</h1>
           <p className="text-sm text-gray-500 mt-1">Season starts soon</p>
         </div>
-        {navGrid}
+        <div className="space-y-3">
+          <Link
+            href="/enter"
+            className="flex items-center gap-4 rounded-xl bg-[#006747] text-white px-5 py-4 hover:bg-[#005236] transition-colors"
+          >
+            <Flag size={20} className="text-white" />
+            <p className="flex-1 font-semibold text-lg">Enter Score</p>
+            <ChevronRight size={16} className="text-[#C9A84C]" />
+          </Link>
+          <NavPills />
+        </div>
       </main>
     );
   }
@@ -91,12 +87,6 @@ export default async function HomePage() {
     select: { player_id: true, total_score: true, week_number: true },
   });
 
-  // Count submissions this week
-  const thisWeekCount =
-    latestWeek !== null
-      ? allSeasonRounds.filter((r) => r.week_number === latestWeek).length
-      : 0;
-
   // Regular players with season averages (sub_order === null)
   const allPlayers = await db.player.findMany({
     where: { active: true },
@@ -104,6 +94,14 @@ export default async function HomePage() {
   });
 
   const regulars = allPlayers.filter((p) => p.sub_order === null);
+
+  // Score submission counter for current week (regulars only)
+  const regularIds = new Set(regulars.map((p) => p.id));
+  const thisWeekRegularCount =
+    latestWeek !== null
+      ? allSeasonRounds.filter((r) => r.week_number === latestWeek && regularIds.has(r.player_id)).length
+      : 0;
+  const regularCount = regulars.length;
 
   // Per-player season averages
   const avgByPlayer = new Map<number, number | null>();
@@ -150,22 +148,31 @@ export default async function HomePage() {
       {/* Header */}
       <div>
         <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">2026 Season</p>
-        <h1 className="text-3xl font-bold tracking-tight">KEY Golf</h1>
+        <h1 className="text-3xl font-bold tracking-tight">KEY Golf League</h1>
         <p className="text-sm text-gray-500 mt-1">
           {latestWeek !== null ? `Week ${latestWeek} of 13` : "Week 1 of 13"} · Thursdays in Saratoga Springs
         </p>
-        {latestWeek !== null && thisWeekCount > 0 && (
-          <p className="text-xs text-gray-400 mt-0.5">
-            {thisWeekCount} score{thisWeekCount !== 1 ? "s" : ""} in for Week {latestWeek}
-          </p>
-        )}
       </div>
 
       {/* Weather */}
       <WeatherWidget />
 
       {/* Nav grid */}
-      {navGrid}
+      <div className="space-y-3">
+        {/* Enter Score CTA with submission counter */}
+        <Link
+          href="/enter"
+          className="flex items-center gap-4 rounded-xl bg-[#006747] text-white px-5 py-4 hover:bg-[#005236] transition-colors"
+        >
+          <Flag size={20} className="text-white" />
+          <p className="flex-1 font-semibold text-lg">Enter Score</p>
+          <span className="text-sm font-semibold text-white/70 tabular-nums">
+            {thisWeekRegularCount}/{regularCount}
+          </span>
+          <ChevronRight size={16} className="text-[#C9A84C]" />
+        </Link>
+        <NavPills />
+      </div>
 
       {/* Mini leaderboard */}
       {top5.length > 0 && (
