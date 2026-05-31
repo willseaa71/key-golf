@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 
-export const metadata = { title: "Season Scorecard — KEY Golf" };
+export const metadata = { title: "Scorecard by Week — KEY Golf" };
 
 function fmt(n: number | null, decimals = 1) {
   return n === null ? "—" : n.toFixed(decimals);
@@ -82,14 +82,7 @@ export default async function ScorecardPage() {
   // Sorted player groups
   const regulars = allPlayers
     .filter((p) => p.sub_order === null)
-    .sort((a, b) => {
-      const aA = playerAvg(a.id);
-      const bA = playerAvg(b.id);
-      if (aA === null && bA === null) return a.name.localeCompare(b.name);
-      if (aA === null) return 1;
-      if (bA === null) return -1;
-      return aA - bA;
-    });
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const subs = allPlayers
     .filter((p) => p.sub_order !== null)
@@ -147,7 +140,7 @@ export default async function ScorecardPage() {
       {/* Header */}
       <div className="max-w-lg mb-6">
         <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">{season.name}</p>
-        <h1 className="text-2xl font-bold">Season Scorecard</h1>
+        <h1 className="text-2xl font-bold">Scorecard by Week</h1>
         <p className="text-sm text-gray-500 mt-1">
           {weeks.length === 0
             ? "No rounds recorded yet."

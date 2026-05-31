@@ -18,7 +18,7 @@ const ENTER_CARD = { href: "/enter", icon: <Flag size={20} className="text-white
 
 const NAV_PILLS = [
   { href: "/results",      icon: <Trophy size={20} className="text-[#006747]" />,      label: "Standings"       },
-  { href: "/scorecard",    icon: <ClipboardList size={20} className="text-gray-600" />, label: "Scorecard"       },
+  { href: "/scorecard",    icon: <ClipboardList size={20} className="text-gray-600" />, label: "Scorecard by Week" },
   { href: "/achievements", icon: <Award size={20} className="text-[#C9A84C]" />,        label: "Trophy Case"     },
   { href: "/stats",        icon: <BarChart2 size={20} className="text-gray-600" />,     label: "Hole Performance" },
 ];
