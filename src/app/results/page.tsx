@@ -232,6 +232,8 @@ export default async function ResultsPage({
   const holeDifficultyRounds = weekRounds.filter(
     (r) => r.has_hole_scores && r.hole_scores.length === 9
   );
+  // Course half for this week — used for label + hole number offset (back9 → display 10–18)
+  const weekCourseHalf = holeDifficultyRounds[0]?.course_half ?? weekRounds[0]?.course_half ?? "front9";
   const holeDifficulty: Array<{
     holeNum: number;
     avgVsPar: number;
@@ -388,7 +390,7 @@ export default async function ResultsPage({
             {holeDifficulty && (
               <div className="border-t border-gray-100 mt-4 pt-4">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
-                  Hole difficulty
+                  Hole difficulty · {weekCourseHalf === "back9" ? "Back-9" : "Front-9"}
                 </p>
                 <div className="flex gap-1">
                   {holeDifficulty.map(({ holeNum, bg, fg }) => (
@@ -398,7 +400,7 @@ export default async function ResultsPage({
                       style={{ backgroundColor: bg }}
                     >
                       <span className="text-[9px] font-bold" style={{ color: fg }}>
-                        H{holeNum}
+                        H{weekCourseHalf === "back9" ? holeNum + 9 : holeNum}
                       </span>
                     </div>
                   ))}
