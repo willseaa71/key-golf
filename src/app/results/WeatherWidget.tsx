@@ -126,9 +126,6 @@ async function WeatherCard() {
 
   return (
     <div className="rounded-xl border border-[#C9A84C]/50 bg-[#C9A84C]/5 px-4 py-3">
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
-        Next round · {formatDate(thursday)} · Saratoga Springs
-      </p>
       <div className="flex items-center gap-3">
         {/* Condition */}
         <div className="flex items-center gap-1.5">

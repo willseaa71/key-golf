@@ -81,6 +81,21 @@ export default async function HomePage() {
   });
   const latestWeek = latestRound?.week_number ?? null;
 
+  // Next Thursday + round number (computed in UTC to stay consistent with stored dates)
+  const nowUTC = new Date();
+  const dayOfWeekUTC = nowUTC.getUTCDay();
+  const daysAhead = dayOfWeekUTC === 4 ? 0 : (4 - dayOfWeekUTC + 7) % 7;
+  const nextThursdayUTC = new Date(Date.UTC(
+    nowUTC.getUTCFullYear(), nowUTC.getUTCMonth(), nowUTC.getUTCDate() + daysAhead
+  ));
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const nextRound = Math.min(13, Math.max(1,
+    Math.floor((nextThursdayUTC.getTime() - season.start_date.getTime()) / msPerWeek) + 1
+  ));
+  const nextRoundDate = nextThursdayUTC.toLocaleDateString("en-US", {
+    month: "long", day: "numeric", timeZone: "UTC",
+  });
+
   // All season rounds (for averages + submission count)
   const allSeasonRounds = await db.round.findMany({
     where: { season_id: season.id },
@@ -150,9 +165,14 @@ export default async function HomePage() {
         <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">2026 Season</p>
         <h1 className="text-3xl font-bold tracking-tight">KEY Golf League</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {latestWeek !== null ? `Week ${latestWeek} of 13` : "Week 1 of 13"} · Thursdays in Saratoga Springs
+          {latestWeek !== null ? `Week ${latestWeek} of 13` : "Season underway"}
         </p>
       </div>
+
+      {/* Next round callout */}
+      <p className="text-sm font-semibold text-gray-700">
+        Next Round (Round {nextRound}) — Thursday, {nextRoundDate}
+      </p>
 
       {/* Weather */}
       <WeatherWidget />
@@ -167,7 +187,7 @@ export default async function HomePage() {
           <Flag size={20} className="text-white" />
           <p className="flex-1 font-semibold text-lg">Enter Score</p>
           <span className="text-sm font-semibold text-white/70 tabular-nums">
-            {thisWeekRegularCount}/{regularCount}
+            {thisWeekRegularCount}/{regularCount}{latestWeek !== null ? ` (R${latestWeek})` : ""}
           </span>
           <ChevronRight size={16} className="text-[#C9A84C]" />
         </Link>
