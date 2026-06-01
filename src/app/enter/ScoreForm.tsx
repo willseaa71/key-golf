@@ -13,11 +13,17 @@ type ActiveGame = { id: number; status: string; is_major?: boolean; date: string
 
 const TOTAL_WEEKS = 13;
 
-function computeWeekNumber(dateStr: string, seasonStart: string): number {
-  const date = new Date(dateStr + "T12:00:00Z");
-  const start = new Date(seasonStart);
-  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-  return Math.min(TOTAL_WEEKS, Math.max(1, Math.floor((date.getTime() - start.getTime()) / msPerWeek) + 1));
+type RoundEntry = { week: number; date: string; label: string };
+
+/** Build all 13 Thursday dates from the season start date. */
+function buildRounds(seasonStart: string): RoundEntry[] {
+  const [year, month, day] = seasonStart.slice(0, 10).split("-").map(Number);
+  return Array.from({ length: TOTAL_WEEKS }, (_, i) => {
+    const d = new Date(Date.UTC(year, month - 1, day + i * 7));
+    const dateStr = d.toISOString().slice(0, 10);
+    const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+    return { week: i + 1, date: dateStr, label };
+  });
 }
 
 function todayString(): string {
@@ -28,6 +34,16 @@ function todayString(): string {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+/** Default to today's round, else the most recent past round, else round 1. */
+function getDefaultDate(rounds: RoundEntry[]): string {
+  const today = todayString();
+  return (
+    rounds.find((r) => r.date === today)?.date ??
+    [...rounds].reverse().find((r) => r.date <= today)?.date ??
+    rounds[0].date
+  );
 }
 
 const EMPTY_HOLES = Array(9).fill("") as string[];
@@ -43,13 +59,17 @@ export function ScoreForm({
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
+  // Build rounds from season start — all 13 Thursdays
+  const rounds = buildRounds(season.start_date);
+  const today = todayString();
+
   const [state, formAction, pending] = useActionState<RoundFormState, FormData>(
     submitRound,
     {}
   );
 
   const [playerId, setPlayerId] = useState<string>("");
-  const [date, setDate] = useState<string>(todayString());
+  const [date, setDate] = useState<string>(() => getDefaultDate(rounds));
   const [courseHalf, setCourseHalf] = useState<"front9" | "back9">("front9");
   const [mode, setMode] = useState<"hole" | "total">("hole");
   const [holes, setHoles] = useState<string[]>(EMPTY_HOLES);
@@ -58,7 +78,8 @@ export function ScoreForm({
   const [clientError, setClientError] = useState<string>("");
   const [puttOffWinner, setPuttOffWinner] = useState<boolean>(false);
 
-  const weekNumber = computeWeekNumber(date, season.start_date);
+  const selectedRound = rounds.find((r) => r.date === date) ?? rounds[0];
+  const weekNumber = selectedRound.week;
   const holeTotal = holes.reduce((sum, h) => sum + (parseInt(h, 10) || 0), 0);
   const selectedPlayer = players.find((p) => p.id === parseInt(playerId, 10));
   const courseHalfLabel = courseHalf === "front9" ? "Front-9" : courseHalf === "back9" ? "Back-9" : "";
@@ -112,7 +133,7 @@ export function ScoreForm({
 
   function handleReset() {
     setPlayerId("");
-    setDate(todayString());
+    setDate(getDefaultDate(rounds));
     setCourseHalf("front9");
     setMode("hole");
     setHoles(EMPTY_HOLES);
@@ -191,19 +212,47 @@ export function ScoreForm({
             </div>
           )}
 
-          {/* Date + derived week */}
+          {/* Round selector — Thursday-only grid */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date of round
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Round
             </label>
-            <input
-              type="date"
-              value={date}
-              min={season.start_date.slice(0, 10)}
-              max={season.end_date.slice(0, 10)}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[#006747]"
-            />
+            <div className="grid grid-cols-4 gap-1.5">
+              {rounds.map((r) => {
+                const isSelected = date === r.date;
+                const isFuture = r.date > today;
+                const isToday = r.date === today;
+                return (
+                  <button
+                    key={r.week}
+                    type="button"
+                    disabled={isFuture}
+                    onClick={() => setDate(r.date)}
+                    className={[
+                      "flex flex-col items-center py-2 px-1 rounded-lg text-center transition-all",
+                      isSelected
+                        ? "bg-[#006747] text-white ring-2 ring-[#006747] ring-offset-1"
+                        : isFuture
+                        ? "border border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                        : "border border-gray-200 text-gray-700 hover:border-[#006747] hover:bg-[#006747]/5",
+                    ].join(" ")}
+                  >
+                    <span className={`text-xs font-bold leading-tight ${isSelected ? "text-white" : "text-gray-600"}`}>
+                      R{r.week}
+                    </span>
+                    <span className={`text-[11px] leading-tight ${isSelected ? "text-white/80" : "text-gray-400"}`}>
+                      {r.label}
+                    </span>
+                    {isToday && !isSelected && (
+                      <span className="mt-0.5 w-1 h-1 rounded-full bg-[#C9A84C]" />
+                    )}
+                    {isToday && isSelected && (
+                      <span className="mt-0.5 w-1 h-1 rounded-full bg-white/60" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Front-9 / Back-9 */}
@@ -370,12 +419,10 @@ export function ScoreForm({
               <span className="font-medium text-black">{selectedPlayer?.name}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Date</span>
-              <span className="font-medium text-black">{date}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Week</span>
-              <span className="font-medium text-black">{weekNumber} of {TOTAL_WEEKS} — {season.name}</span>
+              <span className="text-gray-500">Round</span>
+              <span className="font-medium text-black">
+                R{weekNumber} · {selectedRound.label} · {season.name}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Course half</span>
