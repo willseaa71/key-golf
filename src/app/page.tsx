@@ -89,8 +89,12 @@ export default async function HomePage() {
     nowUTC.getUTCFullYear(), nowUTC.getUTCMonth(), nowUTC.getUTCDate() + daysAhead
   ));
   const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  // Normalize season start to midnight UTC so fractional-hour offsets don't skew integer division
+  const seasonStartMidnight = new Date(Date.UTC(
+    season.start_date.getUTCFullYear(), season.start_date.getUTCMonth(), season.start_date.getUTCDate()
+  ));
   const nextRound = Math.min(13, Math.max(1,
-    Math.floor((nextThursdayUTC.getTime() - season.start_date.getTime()) / msPerWeek) + 1
+    Math.floor((nextThursdayUTC.getTime() - seasonStartMidnight.getTime()) / msPerWeek) + 1
   ));
   const nextRoundDate = nextThursdayUTC.toLocaleDateString("en-US", {
     month: "long", day: "numeric", timeZone: "UTC",
@@ -169,13 +173,13 @@ export default async function HomePage() {
         </p>
       </div>
 
-      {/* Next round callout */}
-      <p className="text-sm font-semibold text-gray-700">
-        Next Round (Round {nextRound}) — Thursday, {nextRoundDate}
-      </p>
-
-      {/* Weather */}
-      <WeatherWidget />
+      {/* Next round callout + weather grouped together */}
+      <div className="space-y-1.5">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+          Next Round (R{nextRound}) — Thursday, {nextRoundDate}
+        </p>
+        <WeatherWidget />
+      </div>
 
       {/* Nav grid */}
       <div className="space-y-3">
