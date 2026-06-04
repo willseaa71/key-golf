@@ -215,6 +215,9 @@ export default async function HomePage() {
                   <p className="text-sm font-semibold text-gray-900 truncate">{major.name}</p>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {ruleset}{teamType ? ` · ${teamType}` : ""}
+                    {major.bet_amount != null && major.bet_amount > 0
+                      ? ` · $${Number.isInteger(major.bet_amount) ? major.bet_amount : major.bet_amount.toFixed(2)} per player`
+                      : ""}
                   </p>
                 </div>
               </div>

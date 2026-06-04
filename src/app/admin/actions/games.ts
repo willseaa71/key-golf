@@ -145,10 +145,13 @@ export async function createGame(
   const dateStr = formData.get("date") as string;
   const rulesetType = formData.get("ruleset_type") as string;
   const isMajor = formData.get("is_major") === "on";
+  const betAmountRaw = formData.get("bet_amount") as string | null;
+  const betAmount = betAmountRaw && betAmountRaw.trim() !== "" ? parseFloat(betAmountRaw) : null;
 
   if (!name) return { error: "Game name is required." };
   if (!dateStr || isNaN(new Date(dateStr).getTime())) return { error: "Invalid date." };
   if (rulesetType !== "BEST_BALL") return { error: "Invalid ruleset." };
+  if (betAmount !== null && (isNaN(betAmount) || betAmount < 0)) return { error: "Bet amount must be a positive number." };
 
   // Parse teams from formData: teams[0][name], teams[0][members][0][player_id], etc.
   // Encoded as JSON string for simplicity from the client form
@@ -178,6 +181,7 @@ export async function createGame(
       date: new Date(dateStr + "T12:00:00Z"),
       ruleset_type: rulesetType,
       is_major: isMajor,
+      bet_amount: isMajor ? betAmount : null,
       teams: {
         create: teams.map((t) => ({
           name: t.name.trim(),
@@ -266,10 +270,13 @@ export async function updateGame(
   const dateStr = formData.get("date") as string;
   const rulesetType = formData.get("ruleset_type") as string;
   const isMajor = formData.get("is_major") === "on";
+  const betAmountRaw = formData.get("bet_amount") as string | null;
+  const betAmount = betAmountRaw && betAmountRaw.trim() !== "" ? parseFloat(betAmountRaw) : null;
 
   if (!name) return { error: "Game name is required." };
   if (!dateStr || isNaN(new Date(dateStr).getTime())) return { error: "Invalid date." };
   if (rulesetType !== "BEST_BALL") return { error: "Invalid ruleset." };
+  if (betAmount !== null && (isNaN(betAmount) || betAmount < 0)) return { error: "Bet amount must be a positive number." };
 
   const teamsJson = formData.get("teams") as string;
   let teams: { name: string; members: { player_id: number; is_sub: boolean }[] }[];
@@ -299,6 +306,7 @@ export async function updateGame(
         date: new Date(dateStr + "T12:00:00Z"),
         ruleset_type: rulesetType,
         is_major: isMajor,
+        bet_amount: isMajor ? betAmount : null,
         // Reset result state when game is edited
         status: "PENDING",
         calculated_at: null,

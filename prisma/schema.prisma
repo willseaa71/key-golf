@@ -69,6 +69,7 @@ model Game {
   date                 DateTime
   ruleset_type         String     // "BEST_BALL"
   is_major             Boolean    @default(false)
+  bet_amount           Float?     // per-player bet amount (majors only)
   status               String     @default("PENDING") // "PENDING" | "COMPLETE"
   putt_off_winner_id   Int?
   putt_off_winner      Player?    @relation(fields: [putt_off_winner_id], references: [id])

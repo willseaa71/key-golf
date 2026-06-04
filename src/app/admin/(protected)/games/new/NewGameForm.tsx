@@ -20,6 +20,7 @@ type Team = {
 };
 
 export function NewGameForm({ players }: { players: Player[] }) {
+  const [isMajor, setIsMajor] = useState(false);
   const [teams, setTeams] = useState<Team[]>([
     { name: "Team 1", members: [] },
     { name: "Team 2", members: [] },
@@ -135,6 +136,8 @@ export function NewGameForm({ players }: { players: Player[] }) {
             type="checkbox"
             name="is_major"
             id="is_major"
+            checked={isMajor}
+            onChange={(e) => setIsMajor(e.target.checked)}
             className="w-4 h-4 accent-[#C9A84C]"
           />
           <label htmlFor="is_major" className="text-sm font-medium text-gray-700">
@@ -144,6 +147,25 @@ export function NewGameForm({ players }: { players: Player[] }) {
             </span>
           </label>
         </div>
+
+        {isMajor && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Bet amount <span className="text-gray-400 font-normal">(per player, optional)</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+              <input
+                type="number"
+                name="bet_amount"
+                min="0"
+                step="1"
+                placeholder="0"
+                className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-[#C9A84C]"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Team builder */}
