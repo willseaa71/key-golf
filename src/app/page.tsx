@@ -96,8 +96,14 @@ export default async function HomePage() {
   const nextRound = Math.min(13, Math.max(1,
     Math.floor((nextThursdayUTC.getTime() - seasonStartMidnight.getTime()) / msPerWeek) + 1
   ));
-  const nextRoundDate = nextThursdayUTC.toLocaleDateString("en-US", {
-    month: "long", day: "numeric", timeZone: "UTC",
+
+  // Upcoming majors (at most 2, soonest first)
+  const todayMidnightUTC = new Date(Date.UTC(nowUTC.getUTCFullYear(), nowUTC.getUTCMonth(), nowUTC.getUTCDate()));
+  const upcomingMajors = await db.game.findMany({
+    where: { is_major: true, status: "PENDING", date: { gte: todayMidnightUTC } },
+    include: { teams: { include: { members: true } } },
+    orderBy: { date: "asc" },
+    take: 2,
   });
 
   // All season rounds (for averages + submission count)
@@ -165,17 +171,57 @@ export default async function HomePage() {
     <main className="max-w-lg mx-auto px-4 py-8 space-y-8">
       {/* Header */}
       <div>
-        <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">2026 Season</p>
         <h1 className="text-3xl font-bold tracking-tight">KEY Golf League</h1>
+        <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">2026 Season</p>
       </div>
 
-      {/* Next round callout + weather grouped together */}
-      <div className="space-y-1.5">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-          Next Round (R{nextRound}) — Thursday, {nextRoundDate}
-        </p>
-        <WeatherWidget />
-      </div>
+      {/* Weather widget (Forecast header lives inside the card) */}
+      <WeatherWidget />
+
+      {/* Upcoming Majors */}
+      {upcomingMajors.length > 0 && (
+        <div className="space-y-2">
+          {upcomingMajors.map((major) => {
+            const d = new Date(major.date.toISOString().slice(0, 10) + "T12:00:00Z");
+            const monthLabel = d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+            const dayNum = d.getUTCDate();
+            const ruleset = major.ruleset_type
+              .split("_")
+              .map((w) => w[0].toUpperCase() + w.slice(1).toLowerCase())
+              .join(" ");
+            const teamCount = major.teams.length;
+            const membersPerTeam = teamCount > 0
+              ? Math.max(...major.teams.map((t) => t.members.length))
+              : 0;
+            const teamType = teamCount > 0 && membersPerTeam > 0
+              ? `${teamCount}×${membersPerTeam}`
+              : null;
+            return (
+              <div
+                key={major.id}
+                className="flex items-center gap-3 rounded-xl border border-[#C9A84C]/40 bg-[#C9A84C]/5 px-4 py-3"
+              >
+                {/* Day-of-month tile */}
+                <div className="flex flex-col items-center w-10 shrink-0 rounded-lg overflow-hidden border border-[#C9A84C]/30">
+                  <span className="w-full text-center text-[9px] font-bold uppercase bg-[#C9A84C] text-white py-0.5 tracking-wide">
+                    {monthLabel}
+                  </span>
+                  <span className="w-full text-center text-lg font-bold text-gray-900 bg-white py-0.5 leading-tight">
+                    {dayNum}
+                  </span>
+                </div>
+                {/* Details */}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{major.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {ruleset}{teamType ? ` · ${teamType}` : ""}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Nav grid */}
       <div className="space-y-3">
