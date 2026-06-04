@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Enter Score — KEY Golf" };
 
 export default async function EnterPage() {
-  const [players, season, pendingGames] = await Promise.all([
+  const [players, season, pendingGames, majorGames] = await Promise.all([
     db.player.findMany({
       where: { active: true },
       orderBy: { name: "asc" },
@@ -28,6 +28,11 @@ export default async function EnterPage() {
         },
       },
     }),
+    // All major games (any status) — used to highlight round pills with a gold border
+    db.game.findMany({
+      where: { is_major: true },
+      select: { date: true },
+    }),
   ]);
 
   if (!season) {
@@ -49,6 +54,7 @@ export default async function EnterPage() {
           start_date: season.start_date.toISOString(),
           end_date: season.end_date.toISOString(),
         }}
+        majorDates={majorGames.map((g) => g.date.toISOString().slice(0, 10))}
         pendingGames={pendingGames.map((g) => ({
           id: g.id,
           status: g.status,

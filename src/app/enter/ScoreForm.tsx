@@ -52,10 +52,12 @@ export function ScoreForm({
   players,
   season,
   pendingGames,
+  majorDates,
 }: {
   players: Player[];
   season: Season;
   pendingGames: ActiveGame[];
+  majorDates: string[];
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -222,6 +224,7 @@ export function ScoreForm({
                 const isSelected = date === r.date;
                 const isFuture = r.date > today;
                 const isToday = r.date === today;
+                const isMajor = majorDates.includes(r.date);
                 return (
                   <button
                     key={r.week}
@@ -231,9 +234,15 @@ export function ScoreForm({
                     className={[
                       "flex flex-col items-center py-2 px-1 rounded-lg text-center transition-all",
                       isSelected
-                        ? "bg-[#006747] text-white ring-2 ring-[#006747] ring-offset-1"
+                        ? isMajor
+                          ? "bg-[#006747] text-white ring-2 ring-[#C9A84C] ring-offset-1"
+                          : "bg-[#006747] text-white ring-2 ring-[#006747] ring-offset-1"
                         : isFuture
-                        ? "border border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                        ? isMajor
+                          ? "border border-[#C9A84C]/30 bg-gray-50 text-gray-300 cursor-not-allowed"
+                          : "border border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                        : isMajor
+                        ? "border-2 border-[#C9A84C] text-gray-700 hover:bg-[#C9A84C]/5"
                         : "border border-gray-200 text-gray-700 hover:border-[#006747] hover:bg-[#006747]/5",
                     ].join(" ")}
                   >

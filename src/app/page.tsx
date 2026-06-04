@@ -114,12 +114,11 @@ export default async function HomePage() {
 
   const regulars = allPlayers.filter((p) => p.sub_order === null);
 
-  // Score submission counter for current week (regulars only)
-  const regularIds = new Set(regulars.map((p) => p.id));
-  const thisWeekRegularCount =
-    latestWeek !== null
-      ? allSeasonRounds.filter((r) => r.week_number === latestWeek).length
-      : 0;
+  // Score submission counter — on Thursdays reset to the current round (even at 0 scores),
+  // otherwise show the most recent week that has scores.
+  const isThursdayUTC = dayOfWeekUTC === 4;
+  const displayWeek = isThursdayUTC ? nextRound : (latestWeek ?? nextRound);
+  const thisWeekRegularCount = allSeasonRounds.filter((r) => r.week_number === displayWeek).length;
   const regularCount = regulars.length;
 
   // Per-player season averages
@@ -168,9 +167,6 @@ export default async function HomePage() {
       <div>
         <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">2026 Season</p>
         <h1 className="text-3xl font-bold tracking-tight">KEY Golf League</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {latestWeek !== null ? `Week ${latestWeek} of 13` : "Season underway"}
-        </p>
       </div>
 
       {/* Next round callout + weather grouped together */}
@@ -191,7 +187,7 @@ export default async function HomePage() {
           <Flag size={20} className="text-white" />
           <p className="flex-1 font-semibold text-lg">Enter Score</p>
           <span className="text-sm font-semibold text-white/70 tabular-nums">
-            {thisWeekRegularCount}/{regularCount}{latestWeek !== null ? ` (R${latestWeek})` : ""}
+            {thisWeekRegularCount}/{regularCount} (R{displayWeek})
           </span>
           <ChevronRight size={16} className="text-[#C9A84C]" />
         </Link>
@@ -201,10 +197,15 @@ export default async function HomePage() {
       {/* Mini leaderboard */}
       {top5.length > 0 && (
         <section className="border-t border-[#006747] pt-6 mt-6">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest">
-              Top Players
-            </h2>
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest">
+                Top Players
+              </h2>
+              {latestWeek !== null && (
+                <p className="text-xs text-gray-400 mt-0.5">Through R{latestWeek} of 13</p>
+              )}
+            </div>
             {seasonFieldAvg !== null && (
               <span className="text-xs text-gray-400">
                 Field avg <span className="font-semibold text-gray-600">{fmt(seasonFieldAvg)}</span>
