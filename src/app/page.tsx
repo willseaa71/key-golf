@@ -243,20 +243,23 @@ export default async function HomePage() {
       {/* Mini leaderboard */}
       {top5.length > 0 && (
         <section className="border-t border-[#006747] pt-6 mt-6">
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest">
-                Top Players
-              </h2>
+          <div className="mb-3">
+            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-widest">
+              Top Players
+            </h2>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
               {latestWeek !== null && (
-                <p className="text-xs text-gray-400 mt-0.5">Through R{latestWeek} of 13</p>
+                <span className="text-xs text-gray-400">Through R{latestWeek} of 13</span>
+              )}
+              {latestWeek !== null && seasonFieldAvg !== null && (
+                <span className="text-xs text-gray-300">·</span>
+              )}
+              {seasonFieldAvg !== null && (
+                <span className="text-xs text-gray-400">
+                  Field avg <span className="font-semibold text-gray-600">{fmt(seasonFieldAvg)}</span>
+                </span>
               )}
             </div>
-            {seasonFieldAvg !== null && (
-              <span className="text-xs text-gray-400">
-                Field avg <span className="font-semibold text-gray-600">{fmt(seasonFieldAvg)}</span>
-              </span>
-            )}
           </div>
           <div className="rounded-xl border border-gray-200 overflow-hidden">
             {top5.map(({ id, name, seasonAvg, rank }) => (
