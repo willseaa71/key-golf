@@ -43,16 +43,6 @@ function wmo(code: number): WmoEntry {
   return WMO[code] ?? { label: "Mixed", icon: <CloudSun size={18} className="text-gray-400" /> };
 }
 
-// Next Thursday relative to today (or today if today is Thursday)
-function nextThursday(): string {
-  const now = new Date();
-  const day = now.getDay(); // 0=Sun … 4=Thu
-  const daysAhead = day === 4 ? 0 : (4 - day + 7) % 7;
-  const target = new Date(now);
-  target.setDate(now.getDate() + daysAhead);
-  return target.toISOString().slice(0, 10); // "YYYY-MM-DD"
-}
-
 function formatDate(iso: string): string {
   return new Date(iso + "T12:00:00Z").toLocaleDateString("en-US", {
     weekday: "long",
@@ -108,9 +98,15 @@ async function WeatherCard() {
     );
   }
 
-  const thursday = nextThursday();
-  const idx = data.daily.time.indexOf(thursday);
-  if (idx === -1) return null;
+  // Find the first Thursday in the API's response dates.
+  // Parsing at noon UTC avoids DST ambiguity; getUTCDay() === 4 means Thursday.
+  // This is timezone-safe: no dependency on the server's local clock.
+  const thursdayIdx = data.daily.time.findIndex(
+    (d) => new Date(d + "T12:00:00Z").getUTCDay() === 4
+  );
+  if (thursdayIdx === -1) return null;
+  const thursday = data.daily.time[thursdayIdx];
+  const idx = thursdayIdx;
 
   const high  = Math.round(data.daily.temperature_2m_max[idx]);
   const low   = Math.round(data.daily.temperature_2m_min[idx]);
