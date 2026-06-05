@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { checkAdminAuth } from "@/lib/admin-auth";
-import { triggerCalculation, setPuttOffWinner, deleteGame } from "@/app/admin/actions/games";
+import { triggerCalculation, deleteGame } from "@/app/admin/actions/games";
 
 export const metadata = { title: "Game Detail — KEY Golf Admin" };
 
@@ -25,7 +25,6 @@ export default async function GameDetailPage({
         },
         orderBy: { id: "asc" },
       },
-      putt_off_winner: true,
     },
   });
 
@@ -48,30 +47,10 @@ export default async function GameDetailPage({
     : [];
   const completePlayerIds = new Set(completeRounds.map((r) => r.player_id));
 
-  // For COMPLETE: detect tie
-  const maxPoints = isComplete
-    ? Math.max(...game.teams.map((t) => t.points ?? 0))
-    : 0;
-  const tiedTeams = isComplete
-    ? game.teams.filter((t) => (t.points ?? 0) === maxPoints)
-    : [];
-  const isTied = tiedTeams.length > 1 && !game.putt_off_winner_id;
-
-  // Players eligible for putt-off selection (from tied teams)
-  const puttOffCandidates = isTied
-    ? tiedTeams.flatMap((t) => t.members.map((m) => m.player))
-    : [];
-
   // Named server actions (arrow functions don't support the "use server" directive)
   async function handleTrigger() {
     "use server";
     await triggerCalculation(gameId);
-  }
-
-  async function handlePuttOff(formData: FormData) {
-    "use server";
-    const playerId = parseInt(formData.get("putt_off_winner_id") as string, 10);
-    await setPuttOffWinner(gameId, playerId);
   }
 
   async function handleDelete() {
@@ -206,35 +185,6 @@ export default async function GameDetailPage({
       {/* ── COMPLETE view ── */}
       {isComplete && (
         <>
-          {/* Tie warning + putt-off picker */}
-          {isTied && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-3">
-              <p className="text-sm font-semibold text-amber-800">
-                Tie detected — select the putt-off winner below
-              </p>
-              <form action={handlePuttOff} className="flex gap-3">
-                <select
-                  name="putt_off_winner_id"
-                  required
-                  className="flex-1 border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                >
-                  <option value="">Select winner…</option>
-                  {puttOffCandidates.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#006747] text-white text-sm font-medium hover:bg-[#005236]"
-                >
-                  Set Winner
-                </button>
-              </form>
-            </div>
-          )}
-
           {/* Calculated at */}
           {game.calculated_at && (
             <p className="text-xs text-gray-400">
@@ -248,10 +198,10 @@ export default async function GameDetailPage({
             </p>
           )}
 
-          {/* Teams + results */}
+          {/* Teams + results — sorted ascending: lower best-ball total = better */}
           <div className="space-y-3">
             {[...game.teams]
-              .sort((a, b) => (b.points ?? 0) - (a.points ?? 0))
+              .sort((a, b) => (a.points ?? 999) - (b.points ?? 999))
               .map((team) => (
                 <div
                   key={team.id}
@@ -269,14 +219,10 @@ export default async function GameDetailPage({
                           WINNER
                         </span>
                       )}
-                      {game.putt_off_winner &&
-                        team.members.some((m) => m.player_id === game.putt_off_winner_id) && (
-                          <span className="text-xs text-gray-400">(putt-off)</span>
-                        )}
                     </div>
                     <span className="text-2xl font-bold text-gray-900">
                       {team.points ?? "—"}
-                      <span className="text-sm font-normal text-gray-400 ml-1">pts</span>
+                      <span className="text-sm font-normal text-gray-400 ml-1">strokes</span>
                     </span>
                   </div>
 

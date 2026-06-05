@@ -78,7 +78,6 @@ export function ScoreForm({
   const [totalScore, setTotalScore] = useState<string>("");
   const [view, setView] = useState<"form" | "confirm">("form");
   const [clientError, setClientError] = useState<string>("");
-  const [puttOffWinner, setPuttOffWinner] = useState<boolean>(false);
 
   const selectedRound = rounds.find((r) => r.date === date) ?? rounds[0];
   const weekNumber = selectedRound.week;
@@ -142,7 +141,6 @@ export function ScoreForm({
     setTotalScore("");
     setView("form");
     setClientError("");
-    setPuttOffWinner(false);
   }
 
   const serverError = state.error;
@@ -167,14 +165,6 @@ export function ScoreForm({
       {mode === "total" && (
         <input type="hidden" name="total_score" value={totalScore} />
       )}
-      {/* Game-aware hidden fields */}
-      {activeGame && playerTeam && (
-        <>
-          <input type="hidden" name="game_id" value={activeGame.id} />
-          <input type="hidden" name="team_id" value={playerTeam.id} />
-          <input type="hidden" name="putt_off_winner" value={puttOffWinner ? "true" : ""} />
-        </>
-      )}
 
       {view === "form" ? (
         <div className="space-y-6">
@@ -185,7 +175,7 @@ export function ScoreForm({
             </label>
             <select
               value={playerId}
-              onChange={(e) => { setPlayerId(e.target.value); setPuttOffWinner(false); }}
+              onChange={(e) => setPlayerId(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base bg-white focus:outline-none focus:ring-2 focus:ring-[#006747]"
             >
               <option value="">Select a player…</option>
@@ -358,18 +348,7 @@ export function ScoreForm({
                   );
                 })}
               </div>
-              <div className="mt-3 flex items-center justify-between">
-                {playerTeam && activeGame?.status === "PENDING" ? (
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={puttOffWinner}
-                      onChange={(e) => setPuttOffWinner(e.target.checked)}
-                      className="w-4 h-4 accent-[#C9A84C]"
-                    />
-                    <span className="text-sm text-gray-600">I won the putt-off</span>
-                  </label>
-                ) : <span />}
+              <div className="mt-3 flex justify-end">
                 <div>
                   <span className="text-sm text-gray-500">Total: </span>
                   <span className="text-2xl font-bold text-gray-900">
@@ -441,12 +420,6 @@ export function ScoreForm({
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Team</span>
                 <span className="font-medium text-black">{playerTeam.name}</span>
-              </div>
-            )}
-            {playerTeam && puttOffWinner && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Putt-off</span>
-                <span className="font-medium text-[#C9A84C]">Winner ✓</span>
               </div>
             )}
             {mode === "hole" ? (

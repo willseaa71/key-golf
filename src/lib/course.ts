@@ -7,6 +7,14 @@ export const HOLE_PARS: Record<number, number> = {
   10: 4, 11: 3, 12: 5, 13: 4, 14: 4, 15: 3, 16: 4, 17: 5, 18: 4,
 };
 
+// Course handicap per hole (1 = hardest, 18 = easiest)
+export const HOLE_HANDICAPS: Record<number, number> = {
+  // Front 9
+  1: 5, 2: 15, 3: 1, 4: 7, 5: 13, 6: 3, 7: 9, 8: 17, 9: 11,
+  // Back 9
+  10: 14, 11: 18, 12: 2, 13: 6, 14: 12, 15: 16, 16: 10, 17: 4, 18: 8,
+};
+
 // Par for each 9-hole half (both are 36)
 export const FRONT9_PAR = 36;
 export const BACK9_PAR  = 36;
@@ -18,6 +26,15 @@ export const BACK9_PAR  = 36;
 export function holePar(holeNumber: number, courseHalf: string): number {
   const courseHole = holeNumber + (courseHalf === "back9" ? 9 : 0);
   return HOLE_PARS[courseHole] ?? 4;
+}
+
+/**
+ * Get course handicap for a stored hole_number (1–9) given which half is being played.
+ * Lower handicap = harder hole (1 = hardest, 18 = easiest).
+ */
+export function holeHandicap(holeNumber: number, courseHalf: string): number {
+  const courseHole = holeNumber + (courseHalf === "back9" ? 9 : 0);
+  return HOLE_HANDICAPS[courseHole] ?? 18;
 }
 
 export function halfPar(courseHalf: string): number {

@@ -4,95 +4,84 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { checkAdminAuth } from "@/lib/admin-auth";
+import { holeHandicap } from "@/lib/course";
 
 // ── Calculation ─────────────────────────────────────────────────────────────
 
 export async function calculateBestBallResults(gameId: number): Promise<void> {
   const game = await db.game.findUniqueOrThrow({
     where: { id: gameId },
-    include: {
-      teams: {
-        include: {
-          members: { include: { player: true } },
-        },
-      },
-    },
+    include: { teams: { include: { members: true } } },
   });
 
   const gameDate = game.date;
 
-  // For each team, fetch each member's round (with hole scores) on the game date
-  type TeamScores = {
+  type TeamResult = {
     teamId: number;
-    holeScores: Map<number, number>; // hole_number → best ball stroke count
+    courseHalf: string;
+    holeScores: Map<number, number>; // stored hole_number (1–9) → best-ball stroke count
+    total: number;                   // sum of best-ball scores = team's round score
   };
 
-  const teamResults: TeamScores[] = [];
+  const teamResults: TeamResult[] = [];
 
   for (const team of game.teams) {
     const holeMin = new Map<number, number>();
+    let courseHalf = "front9";
 
     for (const member of team.members) {
       const round = await db.round.findFirst({
-        where: {
-          player_id: member.player_id,
-          date: gameDate,
-          has_hole_scores: true,
-        },
+        where: { player_id: member.player_id, date: gameDate, has_hole_scores: true },
         include: { hole_scores: true },
       });
-
       if (!round) continue;
-
+      courseHalf = round.course_half;
       for (const hs of round.hole_scores) {
-        const current = holeMin.get(hs.hole_number);
-        if (current === undefined || hs.strokes < current) {
-          holeMin.set(hs.hole_number, hs.strokes);
-        }
+        const cur = holeMin.get(hs.hole_number);
+        if (cur === undefined || hs.strokes < cur) holeMin.set(hs.hole_number, hs.strokes);
       }
     }
 
-    teamResults.push({ teamId: team.id, holeScores: holeMin });
+    const total = Array.from(holeMin.values()).reduce((a, b) => a + b, 0);
+    teamResults.push({ teamId: team.id, courseHalf, holeScores: holeMin, total });
   }
 
-  // Collect all hole numbers present across any team
-  const allHoles = new Set<number>();
-  for (const t of teamResults) {
-    for (const h of t.holeScores.keys()) allHoles.add(h);
-  }
+  // Winner = lowest best-ball total (stroke play)
+  const minTotal = Math.min(...teamResults.map((t) => t.total));
+  const tied = teamResults.filter((t) => t.total === minTotal);
 
-  // Tally points per team (1 point per hole won; ties = 0 points)
-  const pointsByTeam = new Map<number, number>(teamResults.map((t) => [t.teamId, 0]));
+  let winningTeamId: number | null = null;
 
-  for (const hole of allHoles) {
-    const scores = teamResults
-      .map((t) => ({ teamId: t.teamId, score: t.holeScores.get(hole) }))
-      .filter((t): t is { teamId: number; score: number } => t.score !== undefined);
+  if (tied.length === 1) {
+    winningTeamId = tied[0].teamId;
+  } else if (tied.length > 1) {
+    // Tiebreaker: compare hole by hole, hardest first (lowest handicap = hardest)
+    const courseHalf = tied[0].courseHalf;
+    const holesPlayed = [...tied[0].holeScores.keys()].sort(
+      (a, b) => holeHandicap(a, courseHalf) - holeHandicap(b, courseHalf)
+    );
 
-    if (scores.length === 0) continue;
-    const minScore = Math.min(...scores.map((s) => s.score));
-    const winners = scores.filter((s) => s.score === minScore);
-
-    if (winners.length === 1) {
-      pointsByTeam.set(winners[0].teamId, (pointsByTeam.get(winners[0].teamId) ?? 0) + 1);
+    for (const hole of holesPlayed) {
+      const scores = tied.map((t) => ({
+        teamId: t.teamId,
+        score: t.holeScores.get(hole) ?? Infinity,
+      }));
+      const best = Math.min(...scores.map((s) => s.score));
+      const holeWinners = scores.filter((s) => s.score === best);
+      if (holeWinners.length === 1) {
+        winningTeamId = holeWinners[0].teamId;
+        break;
+      }
+      // Still tied on this hole → check next hardest
     }
-    // ties: 0 points, no carryover
   }
 
-  // Determine winner — if tied, don't auto-resolve (putt-off needed)
-  const maxPoints = Math.max(...pointsByTeam.values());
-  const topTeams = teamResults.filter((t) => (pointsByTeam.get(t.teamId) ?? 0) === maxPoints);
-  const isTied = topTeams.length > 1;
-
-  // Write results in a transaction
+  // Persist: points = team's best-ball total (lower is better); is_winner = computed above
   await db.$transaction(async (tx) => {
-    for (const [teamId, points] of pointsByTeam) {
+    for (const t of teamResults) {
       await tx.gameTeam.update({
-        where: { id: teamId },
-        data: {
-          points,
-          is_winner: !isTied && points === maxPoints,
-        },
+        where: { id: t.teamId },
+        data: { points: t.total, is_winner: t.teamId === winningTeamId },
       });
     }
     await tx.game.update({
@@ -206,42 +195,6 @@ export async function createGame(
 export async function triggerCalculation(gameId: number): Promise<void> {
   await checkAdminAuth();
   await calculateBestBallResults(gameId);
-  revalidatePath(`/admin/games/${gameId}`);
-}
-
-// ── Admin: Set putt-off winner ───────────────────────────────────────────────
-
-export async function setPuttOffWinner(gameId: number, playerId: number): Promise<void> {
-  await checkAdminAuth();
-
-  // Find which team the player is on
-  const member = await db.gameTeamMember.findFirst({
-    where: { player_id: playerId, team: { game_id: gameId } },
-    include: { team: true },
-  });
-
-  if (!member) return;
-
-  const winningTeamId = member.team.id;
-
-  await db.$transaction(async (tx) => {
-    // Clear all winners on this game's teams
-    await tx.gameTeam.updateMany({
-      where: { game_id: gameId },
-      data: { is_winner: false },
-    });
-    // Set the winning team
-    await tx.gameTeam.update({
-      where: { id: winningTeamId },
-      data: { is_winner: true },
-    });
-    // Record the putt-off winner on the game
-    await tx.game.update({
-      where: { id: gameId },
-      data: { putt_off_winner_id: playerId },
-    });
-  });
-
   revalidatePath(`/admin/games/${gameId}`);
 }
 

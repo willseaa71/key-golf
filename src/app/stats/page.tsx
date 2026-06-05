@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { HOLE_PARS } from "@/lib/course";
+import { HOLE_PARS, HOLE_HANDICAPS } from "@/lib/course";
 
 export const metadata = { title: "Stats — KEY Golf" };
 
@@ -14,6 +14,7 @@ type HoleStat = {
   storedHoleNumber: number; // 1–9 as stored in DB
   courseHalf: string;
   par: number;
+  handicap: number; // course handicap (1 = hardest, 18 = easiest)
   count: number;
   avgStrokes: number;
   avgVsPar: number;
@@ -37,11 +38,14 @@ function HoleRow({ stat }: { stat: HoleStat }) {
 
   return (
     <div className="rounded-xl border border-gray-100 bg-white p-4 space-y-2">
-      {/* Row 1: Hole number, par, avg score */}
+      {/* Row 1: Hole number, par, handicap, avg score */}
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-2">
           <span className="text-lg font-bold text-gray-900">H{stat.holeNumber}</span>
           <span className="text-xs text-gray-400">par {stat.par}</span>
+          <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+            HCP {stat.handicap}
+          </span>
         </div>
         <span className="text-lg font-bold" style={{ color: avgColor }}>
           {stat.avgVsPar > 0
@@ -131,6 +135,7 @@ export default async function StatsPage() {
     storedHoleNumber: number;
     courseHalf: string;
     par: number;
+    handicap: number;
     holeNumber: number; // real course number
     sum: number;
     count: number;
@@ -153,6 +158,7 @@ export default async function StatsPage() {
           storedHoleNumber: hs.hole_number,
           courseHalf: round.course_half,
           par,
+          handicap: HOLE_HANDICAPS[realHole] ?? 18,
           holeNumber: realHole,
           sum: 0,
           count: 0,
@@ -180,6 +186,7 @@ export default async function StatsPage() {
     storedHoleNumber: entry.storedHoleNumber,
     courseHalf: entry.courseHalf,
     par: entry.par,
+    handicap: entry.handicap,
     count: entry.count,
     avgStrokes: entry.sum / entry.count,
     avgVsPar: entry.sum / entry.count - entry.par,
