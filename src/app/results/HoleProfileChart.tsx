@@ -1,3 +1,32 @@
+// Server Component — pure SVG, no "use client" needed
+import { HOLE_PARS } from "@/lib/course";
+
+const W = 520;
+const H = 200;
+const ML = 40;
+const MR = 24;
+const MT = 20;
+const MB = 28;
+const PW = W - ML - MR;
+const PH = H - MT - MB;
+const HOLES = 9;
+
+type HoleEntry = { hole_number: number; strokes: number };
+
+type RoundData = {
+  week: number;
+  half: string;
+  holes: HoleEntry[];
+};
+
+type HoleProfileChartProps = {
+  rounds: RoundData[];
+};
+
+function xOf(holeIndex: number /* 0-based */): number {
+  return ML + (holeIndex / (HOLES - 1)) * PW;
+}
+
 function buildPath(points: { x: number; y: number }[]): string {
   return points
     .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
