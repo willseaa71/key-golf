@@ -591,6 +591,12 @@ export default async function AchievementsPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────
 
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const recentMajors = completedMajors.filter(
+    (g) => new Date(g.date) >= sevenDaysAgo
+  );
+
   return (
     <main className="max-w-lg mx-auto px-4 py-8 space-y-8">
       {/* Header */}
@@ -605,12 +611,14 @@ export default async function AchievementsPage() {
       {/* ── Major Winners ── */}
       {completedMajors.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-            Major Winners
-          </h2>
+          {recentMajors.length > 0 && (
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+              Major Winners
+            </h2>
+          )}
 
           {/* Per-major result cards */}
-          {completedMajors.map((game) => {
+          {recentMajors.map((game) => {
             const winningTeam = game.teams.find((t) => t.is_winner);
             return (
               <div
