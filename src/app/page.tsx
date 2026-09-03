@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { WeatherWidget } from "./results/WeatherWidget";
@@ -28,7 +29,7 @@ function NavPills() {
         <Link
           key={card.href}
           href={card.href}
-          className="flex items-center gap-4 px-4 py-4 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-4 px-4 py-4 rounded-2xl border-2 border-gray-300 bg-white shadow-[0_3px_10px_rgba(17,17,17,0.08)] hover:bg-gray-50 transition-colors"
         >
           <span className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100">
             {card.icon}
@@ -55,7 +56,7 @@ export default async function HomePage() {
         {/* Header */}
         <div>
           <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">KEY Golf</p>
-          <h1 className="text-3xl font-bold tracking-tight">KEY Golf League</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Saratoga Golf League</h1>
           <p className="text-sm text-gray-500 mt-1">Season starts soon</p>
         </div>
         <div className="space-y-3">
@@ -93,7 +94,13 @@ export default async function HomePage() {
   const seasonStartMidnight = new Date(Date.UTC(
     season.start_date.getUTCFullYear(), season.start_date.getUTCMonth(), season.start_date.getUTCDate()
   ));
-  const nextRound = Math.min(13, Math.max(1,
+  const seasonEndMidnight = new Date(Date.UTC(
+    season.end_date.getUTCFullYear(), season.end_date.getUTCMonth(), season.end_date.getUTCDate()
+  ));
+  const totalWeeks = Math.max(1, Math.round(
+    (seasonEndMidnight.getTime() - seasonStartMidnight.getTime()) / msPerWeek
+  ) + 1);
+  const nextRound = Math.min(totalWeeks, Math.max(1,
     Math.floor((nextThursdayUTC.getTime() - seasonStartMidnight.getTime()) / msPerWeek) + 1
   ));
 
@@ -170,9 +177,15 @@ export default async function HomePage() {
   return (
     <main className="max-w-lg mx-auto px-4 py-8 space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">KEY Golf League</h1>
-        <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">2026 Season</p>
+      <div className="flex justify-center">
+        <Image
+          src="/season-badge.png"
+          alt={`${season.name} badge`}
+          width={600}
+          height={618}
+          className="w-full max-w-[220px] h-auto"
+          priority
+        />
       </div>
 
       {/* Weather widget (Forecast header lives inside the card) */}
@@ -231,7 +244,7 @@ export default async function HomePage() {
         {/* Enter Score CTA with submission counter */}
         <Link
           href="/enter"
-          className="flex items-center gap-4 rounded-xl bg-[#006747] text-white px-5 py-4 hover:bg-[#005236] transition-colors"
+          className="flex items-center gap-4 rounded-xl bg-[#006747] text-white px-5 py-4 border-2 border-[#004d34] shadow-[0_4px_12px_rgba(0,74,53,0.35)] hover:bg-[#005236] transition-colors"
         >
           <Flag size={20} className="text-white" />
           <p className="flex-1 font-semibold text-lg">Enter Score</p>
@@ -252,7 +265,7 @@ export default async function HomePage() {
             </h2>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               {latestWeek !== null && (
-                <span className="text-xs text-gray-400">Through R{latestWeek} of 13</span>
+                <span className="text-xs text-gray-400">Through R{latestWeek} of {totalWeeks}</span>
               )}
               {latestWeek !== null && seasonFieldAvg !== null && (
                 <span className="text-xs text-gray-300">·</span>

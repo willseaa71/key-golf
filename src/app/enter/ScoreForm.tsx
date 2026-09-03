@@ -11,14 +11,21 @@ type ActiveGameMember = { player_id: number; is_sub: boolean };
 type ActiveGameTeam = { id: number; name: string; members: ActiveGameMember[] };
 type ActiveGame = { id: number; status: string; is_major?: boolean; date: string; teams: ActiveGameTeam[] };
 
-const TOTAL_WEEKS = 13;
-
 type RoundEntry = { week: number; date: string; label: string };
 
+function computeTotalWeeks(seasonStart: string, seasonEnd: string): number {
+  const [sy, sm, sd] = seasonStart.slice(0, 10).split("-").map(Number);
+  const [ey, em, ed] = seasonEnd.slice(0, 10).split("-").map(Number);
+  const start = Date.UTC(sy, sm - 1, sd);
+  const end = Date.UTC(ey, em - 1, ed);
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  return Math.max(1, Math.round((end - start) / msPerWeek) + 1);
+}
+
 /** Build all 13 Thursday dates from the season start date. */
-function buildRounds(seasonStart: string): RoundEntry[] {
+function buildRounds(seasonStart: string, totalWeeks: number): RoundEntry[] {
   const [year, month, day] = seasonStart.slice(0, 10).split("-").map(Number);
-  return Array.from({ length: TOTAL_WEEKS }, (_, i) => {
+  return Array.from({ length: totalWeeks }, (_, i) => {
     const d = new Date(Date.UTC(year, month - 1, day + i * 7));
     const dateStr = d.toISOString().slice(0, 10);
     const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -61,8 +68,10 @@ export function ScoreForm({
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Build rounds from season start — all 13 Thursdays
-  const rounds = buildRounds(season.start_date);
+  // Build rounds from season start through end — total weeks derived from
+  // the season's actual date range
+  const totalWeeks = computeTotalWeeks(season.start_date, season.end_date);
+  const rounds = buildRounds(season.start_date, totalWeeks);
   const today = todayString();
 
   const [state, formAction, pending] = useActionState<RoundFormState, FormData>(

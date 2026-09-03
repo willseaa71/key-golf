@@ -31,3 +31,26 @@ export async function upsertSeason(formData: FormData) {
   revalidatePath("/results");
   redirect("/admin/seasons");
 }
+
+export async function updateSeason(id: number, formData: FormData) {
+  await checkAdminAuth();
+  const name = (formData.get("name") as string).trim();
+  const startDate = formData.get("start_date") as string;
+  const endDate = formData.get("end_date") as string;
+
+  if (!name || !startDate || !endDate) return;
+
+  await db.season.update({
+    where: { id },
+    data: {
+      name,
+      start_date: new Date(startDate + "T12:00:00Z"),
+      end_date: new Date(endDate + "T12:00:00Z"),
+    },
+  });
+
+  revalidatePath("/admin/seasons");
+  revalidatePath("/");
+  revalidatePath("/results");
+  redirect("/admin/seasons");
+}
