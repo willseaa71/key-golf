@@ -16,6 +16,7 @@ model Player {
   prior_averages     PriorSeasonAverage[]
   game_team_members  GameTeamMember[]
   putt_off_games     Game[]
+  ryder_cup_team_members RyderCupTeamMember[]
 }
 
 model PriorSeasonAverage {
@@ -34,6 +35,8 @@ model Season {
   start_date DateTime
   end_date   DateTime
   rounds     Round[]
+  ryder_cup_teams   RyderCupTeam[]
+  ryder_cup_matches RyderCupMatch[]
 }
 
 model Round {
@@ -98,4 +101,41 @@ model GameTeamMember {
   player       Player   @relation(fields: [player_id], references: [id])
 
   @@unique([game_team_id, player_id])
+}
+
+model RyderCupTeam {
+  id        Int                  @id @default(autoincrement())
+  season_id Int
+  name      String
+  season    Season               @relation(fields: [season_id], references: [id])
+  members   RyderCupTeamMember[]
+  matches_a RyderCupMatch[]      @relation("MatchTeamA")
+  matches_b RyderCupMatch[]      @relation("MatchTeamB")
+
+  @@unique([season_id, name])
+}
+
+model RyderCupTeamMember {
+  id        Int          @id @default(autoincrement())
+  team_id   Int
+  player_id Int
+  team      RyderCupTeam @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  player    Player       @relation(fields: [player_id], references: [id])
+
+  @@unique([team_id, player_id])
+}
+
+model RyderCupMatch {
+  id            Int          @id @default(autoincrement())
+  season_id     Int
+  week_number   Int
+  format        String
+  team_a_id     Int
+  team_b_id     Int
+  team_a_points Float
+  team_b_points Float
+  notes         String?
+  season        Season       @relation(fields: [season_id], references: [id])
+  team_a        RyderCupTeam @relation("MatchTeamA", fields: [team_a_id], references: [id])
+  team_b        RyderCupTeam @relation("MatchTeamB", fields: [team_b_id], references: [id])
 }

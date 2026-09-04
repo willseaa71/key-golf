@@ -86,6 +86,17 @@ export default async function ResultsPage({
     );
   }
 
+  // Ryder Cup — running scoreboard (only rendered once teams exist)
+  const ryderCupTeams = await db.ryderCupTeam.findMany({
+    where: { season_id: season.id },
+    orderBy: { id: "asc" },
+  });
+  const ryderCupMatches = ryderCupTeams.length === 2
+    ? await db.ryderCupMatch.findMany({ where: { season_id: season.id } })
+    : [];
+  const ryderCupTeamATotal = ryderCupMatches.reduce((sum, m) => sum + m.team_a_points, 0);
+  const ryderCupTeamBTotal = ryderCupMatches.reduce((sum, m) => sum + m.team_b_points, 0);
+
   // Determine which week to display
   const latestRound = await db.round.findFirst({
     where: { season_id: season.id },
@@ -365,6 +376,25 @@ export default async function ResultsPage({
           />
         </div>
       </div>
+
+      {ryderCupTeams.length === 2 && (
+        <section className="rounded-xl border-2 border-[#C9A84C] bg-[#C9A84C]/5 px-5 py-4">
+          <p className="text-[10px] font-semibold text-[#C9A84C] uppercase tracking-widest mb-2 text-center">
+            Ryder Cup
+          </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 text-center">
+              <p className="text-sm font-semibold text-gray-700 truncate">{ryderCupTeams[0].name}</p>
+              <p className="text-3xl font-bold text-[#006747]">{ryderCupTeamATotal}</p>
+            </div>
+            <span className="text-gray-300 font-bold text-lg">–</span>
+            <div className="flex-1 text-center">
+              <p className="text-sm font-semibold text-gray-700 truncate">{ryderCupTeams[1].name}</p>
+              <p className="text-3xl font-bold text-[#006747]">{ryderCupTeamBTotal}</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Field stats */}
       {fieldStats && (
