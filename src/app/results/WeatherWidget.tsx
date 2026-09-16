@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { ReactNode } from "react";
 import {
-  Sun,
+  Glasses,
   CloudSun,
   Cloud,
   CloudRain,
@@ -16,7 +16,7 @@ const LON = -73.7846;
 
 type WmoEntry = { label: string; icon: ReactNode };
 const WMO: Record<number, WmoEntry> = {
-  0:  { label: "Clear",          icon: <Sun size={18} className="text-amber-400" /> },
+  0:  { label: "Clear",          icon: <Glasses size={18} className="text-amber-400" /> },
   1:  { label: "Mainly Clear",   icon: <CloudSun size={18} className="text-gray-400" /> },
   2:  { label: "Partly Cloudy",  icon: <CloudSun size={18} className="text-gray-400" /> },
   3:  { label: "Overcast",       icon: <Cloud size={18} className="text-gray-400" /> },
@@ -56,11 +56,10 @@ async function fetchWeather() {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
   url.searchParams.set("latitude", String(LAT));
   url.searchParams.set("longitude", String(LON));
-  url.searchParams.set("daily", [
-    "temperature_2m_max",
-    "temperature_2m_min",
-    "precipitation_probability_max",
-    "windspeed_10m_max",
+  url.searchParams.set("hourly", [
+    "temperature_2m",
+    "precipitation_probability",
+    "windspeed_10m",
     "weathercode",
   ].join(","));
   url.searchParams.set("temperature_unit", "fahrenheit");
@@ -71,12 +70,11 @@ async function fetchWeather() {
   const res = await fetch(url.toString(), { cache: "no-store" });
   if (!res.ok) return null;
   return res.json() as Promise<{
-    daily: {
+    hourly: {
       time: string[];
-      temperature_2m_max: number[];
-      temperature_2m_min: number[];
-      precipitation_probability_max: number[];
-      windspeed_10m_max: number[];
+      temperature_2m: number[];
+      precipitation_probability: number[];
+      windspeed_10m: number[];
       weathercode: number[];
     };
   }>;
@@ -101,18 +99,36 @@ async function WeatherCard() {
   // Find the first Thursday in the API's response dates.
   // Parsing at noon UTC avoids DST ambiguity; getUTCDay() === 4 means Thursday.
   // This is timezone-safe: no dependency on the server's local clock.
-  const thursdayIdx = data.daily.time.findIndex(
+  const dates = Array.from(new Set(data.hourly.time.map((t) => t.slice(0, 10))));
+  const thursdayIdx = dates.findIndex(
     (d) => new Date(d + "T12:00:00Z").getUTCDay() === 4
   );
   if (thursdayIdx === -1) return null;
-  const thursday = data.daily.time[thursdayIdx];
-  const idx = thursdayIdx;
+  const thursday = dates[thursdayIdx];
 
-  const high  = Math.round(data.daily.temperature_2m_max[idx]);
-  const low   = Math.round(data.daily.temperature_2m_min[idx]);
-  const wind  = Math.round(data.daily.windspeed_10m_max[idx]);
-  const rain  = data.daily.precipitation_probability_max[idx];
-  const code  = data.daily.weathercode[idx];
+  // League play runs 3–7pm — pull those four hourly slots for the window.
+  const windowIdxs = ["15", "16", "17", "18"]
+    .map((h) => data.hourly.time.indexOf(`${thursday}T${h}:00`))
+    .filter((i) => i !== -1);
+
+  if (windowIdxs.length === 0) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3">
+        <p className="text-xs text-gray-400">Weather unavailable</p>
+      </div>
+    );
+  }
+
+  const windowTemps = windowIdxs.map((i) => data.hourly.temperature_2m[i]);
+  const windowWinds = windowIdxs.map((i) => data.hourly.windspeed_10m[i]);
+  const windowRains = windowIdxs.map((i) => data.hourly.precipitation_probability[i]);
+  const windowCodes = windowIdxs.map((i) => data.hourly.weathercode[i]);
+
+  const high  = Math.round(Math.max(...windowTemps));
+  const low   = Math.round(Math.min(...windowTemps));
+  const wind  = Math.round(Math.max(...windowWinds));
+  const rain  = Math.max(...windowRains);
+  const code  = Math.max(...windowCodes);
   const cond  = wmo(code);
 
   const rainColor =
@@ -123,7 +139,7 @@ async function WeatherCard() {
   return (
     <div className="rounded-xl border border-[#C9A84C]/50 bg-[#C9A84C]/5 px-4 py-3">
       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
-        Forecast: {formatDate(thursday)}
+        Forecast: {formatDate(thursday)} · 3–7pm
       </p>
       <div className="flex items-center gap-3">
         {/* Condition */}
